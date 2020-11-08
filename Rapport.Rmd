@@ -1,6 +1,6 @@
 ---
 title: "Data Science"
-author: "Merlin Gérard"
+author: "Merlin Gérard, Estelle Strade, Hugo Phipps"
 date: "11/8/2020"
 output: html_document
 ---
