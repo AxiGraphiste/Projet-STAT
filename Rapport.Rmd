@@ -1,0 +1,14 @@
+---
+title: "Data Science"
+author: "Merlin Gérard"
+date: "11/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+
