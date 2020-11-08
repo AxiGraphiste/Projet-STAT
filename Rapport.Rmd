@@ -18,14 +18,19 @@ library(PerformanceAnalytics)
 library(gridExtra)
 library(gstat)
 #télécharger la fonction 'source'
-source("/Users/merlingerard/Desktop/AGRO/BIRE 22/Q1/Data science/TP/TP3/kernelsmoothing.R")
+#source("/Users/merlingerard/Desktop/AGRO/BIRE 22/Q1/Data science/TP/TP3/kernelsmoothing.R")
 theme_set(theme_classic())
 ```
 
 ## Introduction
 
 ```{r}
-data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#Retirer le '#' devant le fread correspondant à ton chemin en local
+
+#data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#met ton chemin ici Estelle
+
 head(data3)
 summary(data3)
 ```
