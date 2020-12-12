@@ -17,8 +17,6 @@ library(ggplot2)
 library(PerformanceAnalytics)
 library(gridExtra)
 library(gstat)
-#télécharger la fonction 'source'
-#source("/Users/merlingerard/Desktop/AGRO/BIRE 22/Q1/Data science/TP/TP3/kernelsmoothing.R")
 theme_set(theme_classic())
 ```
 
@@ -27,12 +25,17 @@ theme_set(theme_classic())
 ```{r}
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
-#data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#met ton chemin ici Estelle
+#mets ton chemin ici Estelle
 
 head(data3)
 summary(data3)
+
+#afficher proprement les données
+ggplot(data3) + geom_point(aes(x=data3$X, y=data3$Y, color=), size=2) + labs(x="Longitude", y="Latitude" , z="Cadmium concentration", title="Cadmium concentration in space")
 ```
+
+
 
 
