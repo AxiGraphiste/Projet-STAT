@@ -31,11 +31,43 @@ data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv"
 
 head(data3)
 summary(data3)
-
-#afficher proprement les données
-ggplot(data3) + geom_point(aes(x=data3$X, y=data3$Y, color=), size=2) + labs(x="Longitude", y="Latitude" , z="Cadmium concentration", title="Cadmium concentration in space")
 ```
 
+### Graphes 
 
+#### Cadmium
 
+```{r}
+#Cadmium
+map_Cd <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Cd), size=1) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Cadmium measures map") +
+                 theme(plot.title=element_text(hjust=0.5)) + # center title
+                 scale_color_gradient(name="Cadmium [mg/kg]", low='yellow', high='darkblue')
+map_Cd
+```
+
+#### Plomb
+
+```{r}
+#Plomb
+map_Pb <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Pb), size=1) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Lead measures map") +
+                 theme(plot.title=element_text(hjust=0.5)) + # center title
+                 scale_color_gradient(name="Lead [mg/kg]", low='lightblue', high='darkblue')
+map_Pb
+```
+
+#### Chrome
+
+```{r}
+#Chrome
+map_Cr <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Cr), size=1) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Chrome measures map") +
+                 theme(plot.title=element_text(hjust=0.5)) + # center title
+                 scale_color_gradient(name="Chrome [mg/kg]", low='yellow', high='darkgreen')
+map_Cr
+```
 
