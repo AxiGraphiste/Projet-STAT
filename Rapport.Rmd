@@ -25,8 +25,8 @@ theme_set(theme_classic())
 ```{r}
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
-data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #mets ton chemin ici Estelle
 
 head(data3)
@@ -71,11 +71,94 @@ map_Cr <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Cr), size=1) +
 map_Cr
 ```
 
-### Distribution des variables
+
+### Outliers removal
+
+```{r}
+#je commence par retirer les NA pour les différentes concentrations de métaux
+
+data3.Cd <- data3[rowSums(is.na(data3[,5]),) == 0, ] #retire tous les NA du cadmium
+data3.Pb <- data3[rowSums(is.na(data3[,6]),) == 0, ] #retire tous les NA du plomb
+data3.Cr <- data3[rowSums(is.na(data3[,7]),) == 0, ] #retire tous les NA du chrome
+
+data3.NAclean <- data3[rowSums(is.na(data3),) == 0, ] #retire toutes les lignes avec au moins 1 NA
+
+#Pour le chrome
+sd.Cr <- sd(data3.Cr$Cr)
+mean.Cr <- mean(data3.Cr$Cr)
+sd.Cr
+mean.Cr
+
+#Pour le cadmium
+sd.Cd <- sd(data3.Cd$Cd)
+mean.Cd <- mean(data3.Cd$Cd)
+
+#Pour le plomb
+sd.Pb <- sd(data3.Pb$Pb)
+mean.Pb <- mean(data3.Pb$Pb)
+
+#Maintenant je vais retirer les outliers (= valeurs aberrantes) du jeu de données en ne conservant que les données avec une valeur situé entre + et - 3 fois l'écart-type (= standard deviation) de la moyenne (= mean) pour CHAQUE concentration indépendamment, pour ne perdre aucune info sur les cartes individuelles des métaux
+
+clean.Cr <- data3.Cr[data3.Cr$Cr %between% c(mean.Cr-2.5*sd.Cr,mean.Cr+2.5*sd.Cr),]
+
+clean.Pb <- data3.Pb[data3.Pb$Pb %between% c(mean.Pb-2.5*sd.Pb,mean.Pb+2.5*sd.Pb),]
+
+clean.Cd <- data3.Cd[data3.Cd$Cd %between% c(mean.Cd-2.5*sd.Cd,mean.Cd+2.5*sd.Cd),]
+
+#la je retire au fur et à mesure les valeurs aberrantes des différents métaux pour obtenir un data3 final qui est clean, sans NA ni valeurs aberrantes pour l'ensemble des métaux
+
+#sert à comparer les concentrations là où il existe les 3 valeurs (et aucune aberrantes)
+
+clean.data3 <- data3.NAclean[data3.NAclean$Cr %between% c(mean.Cr-2.5*sd.Cr,mean.Cr+2.5*sd.Cr),] #commence avec data3.NAclean pour retirer toutes les lignes avec au moins 1 NA (puisuq'on veut comparer toutes les concentrations entre elles: pas d'intérêt de garder les points avec une ou deux concentrations manquantes)
+clean.data3 <- clean.data3[clean.data3$Pb %between% c(mean.Pb-2.5*sd.Pb,mean.Pb+2.5*sd.Pb),]
+clean.data3 <- clean.data3[clean.data3$Cd %between% c(mean.Cd-2.5*sd.Cd,mean.Cd+2.5*sd.Cd),] #data3 sans NA ni valeurs aberrantes final.
+
+```
+
+### Graphes sans outliers
+
+#### Cadmium sans outliers
+
+```{r}
+#Cadmium
+map_Cd <- ggplot(clean.Cd) + geom_point(aes(x=X, y=Y, color=Cd), size=1) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Cadmium measures map (no outliers)") +
+                 theme(plot.title=element_text(hjust=0.5)) + # center title
+                 scale_color_gradient(name="Cadmium [mg/kg]", low='yellow', high='darkblue')
+map_Cd
+```
+
+#### Plomb sans outliers
 
 ```{r}
 #Plomb
-ggplot(data3, aes(x = Cd)) + # if you put 'aes' here, all geom_ functions will use rain as x
+map_Pb <- ggplot(clean.Pb) + geom_point(aes(x=X, y=Y, color=Pb), size=1) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Lead measures map (no outliers") +
+                 theme(plot.title=element_text(hjust=0.5)) + # center title
+                 scale_color_gradient(name="Lead [mg/kg]", low='lightblue', high='darkblue')
+map_Pb
+```
+
+#### Chrome sans outliers
+
+```{r}
+#Chrome
+map_Cr <- ggplot(clean.Cr) + geom_point(aes(x=X, y=Y, color=Cr), size=1) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Chrome measures map") +
+                 theme(plot.title=element_text(hjust=0.5)) + # center title
+                 scale_color_gradient(name="Chrome [mg/kg]", low='yellow', high='darkgreen')
+map_Cr
+```
+
+
+### Distribution des variables
+
+```{r}
+#Cadmium
+ggplot(clean.data3, aes(x = Cd)) + # if you put 'aes' here, all geom_ functions will use rain as x
   geom_histogram(aes(y = ..density..,  # display density function (and not count)
                      fill = "Density histogram" ),
                  bins = 15, # number of bins
@@ -87,43 +170,112 @@ ggplot(data3, aes(x = Cd)) + # if you put 'aes' here, all geom_ functions will u
   ylab("f(x)") + 
   ggtitle("Density histogram of the Cadmium content") +
   stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(data3$Cd), sd = sd(data3$Cd)), # with mean and sd of rain
+                args=list(mean = mean(clean.data3$Cd), sd = sd(clean.data3$Cd)), # with mean and sd of rain
                 aes(color="Normal pdf"),
                 size= 1) + # width of the line
   scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
                                     "Fitted pdf"=alpha("lightsteelblue3",.2))) +
   scale_color_manual("", values="red")
 
-ggplot(data3, aes(x = Cd)) + 
+ggplot(clean.data3, aes(x = Cd)) + 
   stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
   xlab("Cd content [mg/kg]") + 
   ylab("F(x)") + 
-  ggtitle("Estimated vs normal cdf of the rain") +
+  ggtitle("Estimated vs normal cdf of the Cadmium content") +
   stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(data3$Cd), sd = sd(data3$Cd)), 
+                args = list(mean = mean(clean.data3$Cd), sd = sd(clean.data3$Cd)), 
                 aes(color = 'Normal cdf'),
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
 ```
 
+```{r}
+#Plomb
+ggplot(clean.data3, aes(x = Pb)) + # if you put 'aes' here, all geom_ functions will use rain as x
+  geom_histogram(aes(y = ..density..,  # display density function (and not count)
+                     fill = "Density histogram" ),
+                 bins = 15, # number of bins
+                 color = "white") + 
+  geom_density(col = "lightsteelblue3", 
+               aes(fill = "Fitted pdf"), 
+               alpha = 0.2) +  
+  xlab("Cd content [mg/kg]") + 
+  ylab("f(x)") + 
+  ggtitle("Density histogram of the Lead content") +
+  stat_function(fun=dnorm, # display a normal distribution
+                args=list(mean = mean(clean.data3$Pb), sd = sd(clean.data3$Pb)), # with mean and sd of rain
+                aes(color="Normal pdf"),
+                size= 1) + # width of the line
+  scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
+                                    "Fitted pdf"=alpha("lightsteelblue3",.2))) +
+  scale_color_manual("", values="red")
+
+ggplot(clean.data3, aes(x = Pb)) + 
+  stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
+  xlab("Cd content [mg/kg]") + 
+  ylab("F(x)") + 
+  ggtitle("Estimated vs normal cdf of the Lead content") +
+  stat_function(fun = pnorm, # display a normal cumulative distribution
+                args = list(mean = mean(clean.data3$Pb), sd = sd(clean.data3$Pb)), 
+                aes(color = 'Normal cdf'),
+                size= 1) +
+  scale_color_manual("", values = c("Estimated cdf" = "black",
+                                    "Normal cdf" = "red")) 
+```
+
+```{r}
+#Chrome
+ggplot(clean.data3, aes(x = Cr)) + # if you put 'aes' here, all geom_ functions will use rain as x
+  geom_histogram(aes(y = ..density..,  # display density function (and not count)
+                     fill = "Density histogram" ),
+                 bins = 15, # number of bins
+                 color = "white") + 
+  geom_density(col = "lightsteelblue3", 
+               aes(fill = "Fitted pdf"), 
+               alpha = 0.2) +  
+  xlab("Cd content [mg/kg]") + 
+  ylab("f(x)") + 
+  ggtitle("Density histogram of the Chrome content") +
+  stat_function(fun=dnorm, # display a normal distribution
+                args=list(mean = mean(clean.data3$Cr), sd = sd(clean.data3$Cr)), # with mean and sd of rain
+                aes(color="Normal pdf"),
+                size= 1) + # width of the line
+  scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
+                                    "Fitted pdf"=alpha("lightsteelblue3",.2))) +
+  scale_color_manual("", values="red")
+
+ggplot(clean.data3, aes(x = Cr)) + 
+  stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
+  xlab("Cd content [mg/kg]") + 
+  ylab("F(x)") + 
+  ggtitle("Estimated vs normal cdf of the Chrome content") +
+  stat_function(fun = pnorm, # display a normal cumulative distribution
+                args = list(mean = mean(clean.data3$Cr), sd = sd(clean.data3$Cr)), 
+                aes(color = 'Normal cdf'),
+                size= 1) +
+  scale_color_manual("", values = c("Estimated cdf" = "black",
+                                    "Normal cdf" = "red")) 
+```
+
+
 ### Corrélations
 
 ```{r}
 #scatterplots
-h1 <- ggplot(data3) + geom_histogram(aes(x=Cd), bins=10, color='white')
-h2 <- ggplot(data3) + geom_histogram(aes(x=Pb), bins=10, color='white')
-h3 <- ggplot(data3) + geom_histogram(aes(x=Cr), bins=10, color='white')
-p1 <- ggplot(data3) + geom_point(aes(x=Cd, y=Pb))
-p2 <- ggplot(data3) + geom_point(aes(x=Cd, y=Cr))
-p3 <- ggplot(data3) + geom_point(aes(x=Pb, y=Cr))
-gNA <- ggplot(data3) + theme_void() # This is just an empty plot.
+h1 <- ggplot(clean.data3) + geom_histogram(aes(x=Cd), bins=10, color='white')
+h2 <- ggplot(clean.data3) + geom_histogram(aes(x=Pb), bins=10, color='white')
+h3 <- ggplot(clean.data3) + geom_histogram(aes(x=Cr), bins=10, color='white')
+p1 <- ggplot(clean.data3) + geom_point(aes(x=Cd, y=Pb))
+p2 <- ggplot(clean.data3) + geom_point(aes(x=Cd, y=Cr))
+p3 <- ggplot(clean.data3) + geom_point(aes(x=Pb, y=Cr))
+gNA <- ggplot(clean.data3) + theme_void() # This is just an empty plot.
 
 grid.arrange(h1,p1,p2,gNA, h2,p3,gNA,gNA,h3,
              ncol=3, top="Scatterplots")
 
 #Correlation chart
-chart.Correlation(data3[,.(Cd,Pb,Cr)])
+chart.Correlation(clean.data3[,.(Cd,Pb,Cr)])
 ```
 
 
