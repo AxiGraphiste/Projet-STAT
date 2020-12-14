@@ -71,3 +71,59 @@ map_Cr <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Cr), size=1) +
 map_Cr
 ```
 
+### Distribution des variables
+
+```{r}
+#Plomb
+ggplot(data3, aes(x = Cd)) + # if you put 'aes' here, all geom_ functions will use rain as x
+  geom_histogram(aes(y = ..density..,  # display density function (and not count)
+                     fill = "Density histogram" ),
+                 bins = 15, # number of bins
+                 color = "white") + 
+  geom_density(col = "lightsteelblue3", 
+               aes(fill = "Fitted pdf"), 
+               alpha = 0.2) +  
+  xlab("Cd content [mg/kg]") + 
+  ylab("f(x)") + 
+  ggtitle("Density histogram of the Cadmium content") +
+  stat_function(fun=dnorm, # display a normal distribution
+                args=list(mean = mean(data3$Cd), sd = sd(data3$Cd)), # with mean and sd of rain
+                aes(color="Normal pdf"),
+                size= 1) + # width of the line
+  scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
+                                    "Fitted pdf"=alpha("lightsteelblue3",.2))) +
+  scale_color_manual("", values="red")
+
+ggplot(data3, aes(x = Cd)) + 
+  stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
+  xlab("Cd content [mg/kg]") + 
+  ylab("F(x)") + 
+  ggtitle("Estimated vs normal cdf of the rain") +
+  stat_function(fun = pnorm, # display a normal cumulative distribution
+                args = list(mean = mean(data3$Cd), sd = sd(data3$Cd)), 
+                aes(color = 'Normal cdf'),
+                size= 1) +
+  scale_color_manual("", values = c("Estimated cdf" = "black",
+                                    "Normal cdf" = "red")) 
+```
+
+### Corrélations
+
+```{r}
+#scatterplots
+h1 <- ggplot(data3) + geom_histogram(aes(x=Cd), bins=10, color='white')
+h2 <- ggplot(data3) + geom_histogram(aes(x=Pb), bins=10, color='white')
+h3 <- ggplot(data3) + geom_histogram(aes(x=Cr), bins=10, color='white')
+p1 <- ggplot(data3) + geom_point(aes(x=Cd, y=Pb))
+p2 <- ggplot(data3) + geom_point(aes(x=Cd, y=Cr))
+p3 <- ggplot(data3) + geom_point(aes(x=Pb, y=Cr))
+gNA <- ggplot(data3) + theme_void() # This is just an empty plot.
+
+grid.arrange(h1,p1,p2,gNA, h2,p3,gNA,gNA,h3,
+             ncol=3, top="Scatterplots")
+
+#Correlation chart
+chart.Correlation(data3[,.(Cd,Pb,Cr)])
+```
+
+
