@@ -27,14 +27,9 @@ library(latticeExtra)
 ```{r}
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
-data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-
 #data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#mets ton chemin ici Estelle
-
+data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
 summary(data3)
@@ -284,23 +279,160 @@ grid.arrange(h1,p1,p2,gNA, h2,p3,gNA,gNA,h3,
 #Correlation chart
 chart.Correlation(clean.data3[,.(Cd,Pb,Cr)])
 ```
-
-
+#Semi-variogram pour Cd
 ```{r Cd variogram values}
-#First we create a gstat object
-clean.Cd.gstat <- gstat(formula = Cd~1, data = clean.data3, locations = ~X+Y)
-
-#Then we calculate the semi-variogram values
-Cd.vario <- variogram(clean.Cd.gstat, cutoff = 8, width = 0.5)
-head(Cd.vario)
-```
-
-```{r Cd variogram figure, results='hide'}
-#First we create a gstat object
-plot(Cd.vario, main = "Variogram of Cd", pch=16,col='black')
-
+#Code
+Cd.gstat <- gstat(formula = Cd~1, data = clean.data3, locations = ~X+Y)
+Cd.vario <- variogram(Cd.gstat, cutoff =800000 , width = 798)
+vg.model <- vgm(psill = 2, model ='Exp' , range= 600)
+fit.vg.model <- fit.variogram(Cd.vario, model=vg.model)
+plot(Cd.vario, model=fit.vg.model, main="Variogram of Cd", pch=16, col="black")
+#Variance of rain
 trellis.focus("panel",1,1)
-llines(x=c(0,max(Cd.vario$dist)), y=c(var(clean.data3$Cd), var(clean.data3$Cd)), col="red", lwd=1, lty=2)
+llines(x=c(196300, 279509.0), y=c(93704, 163250.0), col="red", lwd=1, lty=2)
 trellis.unfocus()
 ```
+
+#Semi-variogram pour Cr
+```{r Cr variogram values}
+#Code
+Cr.gstat <- gstat(formula = Cr~1, data = clean.data3, locations = ~X+Y)
+Cr.vario <- variogram(Cr.gstat, cutoff =800000 , width = 2000)
+vg.model <- vgm(psill = 100, model ='Exp' , range= 1200)
+fit.vg.model <- fit.variogram(Cr.vario, model=vg.model)
+plot(Cr.vario, model=fit.vg.model, main="Variogram of Cr", pch=16, col="black")
+#Variance of rain
+trellis.focus("panel",1,1)
+llines(x=c(196300, 279509.0), y=c(93704, 163250.0), col="red", lwd=1, lty=2)
+trellis.unfocus()
+```
+
+#Semi-variogram pour Pb
+```{r Pb variogram values}
+#Code
+Pb.gstat <- gstat(formula = Pb~1, data = clean.data3, locations = ~X+Y)
+Pb.vario <- variogram(Cd.gstat, cutoff =300000 , width = 798)
+vg.model <- vgm(psill = 2, model ='Exp' , range= 600)
+fit.vg.model <- fit.variogram(Pb.vario, model=vg.model)
+plot(Cd.vario, model=fit.vg.model, main="Variogram of Pb", pch=16, col="black")
+#Variance of rain
+trellis.focus("panel",1,1)
+llines(x=c(196300, 279509.0), y=c(93704, 163250.0), col="red", lwd=1, lty=2)
+trellis.unfocus()
+```
+
+#3Dplot of Cd 
+```{r Cd derive}
+Cd.lm <- lm(Cd ~X+Y, data = clean.data3)
+
+test <- scatter3d(x = clean.data3$X, z = clean.data3$Y, y = clean.data3$Cd, 
+          xlab = 'Longitude', zlab = 'Lattitude', ylab = 'Cd')
+
+rglwidget(width = 800000, height = 300)
+
+#Compute the vector of residuals by substracting the trend values to the initial values of Cd
+Cd.derive <- predict(Cd.lm, clean.data3)
+clean.data3[, clean.Cd := Cd - Cd.derive]
+scatter3d(x = clean.data3$X, z = clean.data3$Y, y = clean.data3$clean.Cd, 
+           xlab = 'Longitude', zlab = 'Lattitude', ylab = 'Cd')
+rglwidget(width = 800000, height = 300)
+
+# remove outliers: we only keep data within 3sd from the mean
+res.Sd <- sd(clean.data3$clean.Cd)
+res.Mean <- mean(clean.data3$clean.Cd)
+clean.clean.data3 <- clean.data3[clean.Cd %between% 
+c(res.Mean-3*res.Sd,res.Mean+3*res.Sd),]
+
+# Map residuals
+ggplot(clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Cd), size=4) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Cd residuals map") +
+                 theme(plot.title=element_text(hjust=0.5)) + 
+                 scale_color_gradient(name="Cd [mm]", low='yellow', high='darkblue')
+
+# Map clean residuals
+ggplot(clean.clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Cd), size=4) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Cd residuals map (no outliers)") +
+                 theme(plot.title=element_text(hjust=0.5)) + 
+                 scale_color_gradient(name="Cd [mm]", low='yellow', high='darkblue')
+
+```
+
+#3Dplot of Cr
+```{r Cr derive}
+Cr.lm <- lm(Cr ~X+Y, data = clean.data3)
+
+test <- scatter3d(x = clean.data3$X, z = clean.data3$Y, y = clean.data3$Cr, 
+          xlab = 'Longitude', zlab = 'Lattitude', ylab = 'Cr')
+
+rglwidget(width = 800000, height = 300)
+
+#Compute the vector of residuals by substracting the trend values to the initial values of Cr
+Cr.derive <- predict(Cr.lm, clean.data3)
+clean.data3[, clean.Cr := Cr - Cr.derive]
+scatter3d(x = clean.data3$X, z = clean.data3$Y, y = clean.data3$clean.Cr, 
+           xlab = 'Longitude', zlab = 'Lattitude', ylab = 'Cr')
+rglwidget(width = 800000, height = 300)
+
+# remove outliers: we only keep data within 3sd from the mean
+res.Sd <- sd(clean.data3$clean.Cr)
+res.Mean <- mean(clean.data3$clean.Cr)
+clean.clean.data3 <- clean.data3[clean.Cr %between% 
+c(res.Mean-3*res.Sd,res.Mean+3*res.Sd),]
+
+# Map residuals
+ggplot(clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Cr), size=4) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Cr residuals map") +
+                 theme(plot.title=element_text(hjust=0.5)) + 
+                 scale_color_gradient(name="Cr [mm]", low='yellow', high='darkblue')
+
+# Map clean residuals
+ggplot(clean.clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Cr), size=4) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Cr residuals map (no outliers)") +
+                 theme(plot.title=element_text(hjust=0.5)) + 
+                 scale_color_gradient(name="Cr [mm]", low='yellow', high='darkblue')
+
+```
+
+#3Dplot of Pb
+```{r Cd derive}
+Pb.lm <- lm(Pb ~X+Y, data = clean.data3)
+
+test <- scatter3d(x = clean.data3$X, z = clean.data3$Y, y = clean.data3$Pb, 
+          xlab = 'Longitude', zlab = 'Lattitude', ylab = 'Pb')
+
+rglwidget(width = 800000, height = 300)
+
+#Compute the vector of residuals by substracting the trend values to the initial values of Pb
+Pb.derive <- predict(Pb.lm, clean.data3)
+clean.data3[, clean.Pb := Pb - Pb.derive]
+scatter3d(x = clean.data3$X, z = clean.data3$Y, y = clean.data3$clean.Pb, 
+           xlab = 'Longitude', zlab = 'Lattitude', ylab = 'Pb')
+rglwidget(width = 800000, height = 300)
+
+# remove outliers: we only keep data within 3sd from the mean
+res.Sd <- sd(clean.data3$clean.Pb)
+res.Mean <- mean(clean.data3$clean.Pb)
+clean.clean.data3 <- clean.data3[clean.Pb %between% 
+c(res.Mean-3*res.Sd,res.Mean+3*res.Sd),]
+
+# Map residuals
+ggplot(clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Pb), size=4) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Pb residuals map") +
+                 theme(plot.title=element_text(hjust=0.5)) + 
+                 scale_color_gradient(name="Pb [mm]", low='yellow', high='darkblue')
+
+# Map clean residuals
+ggplot(clean.clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Pb), size=4) + 
+                 xlab("Longitude") + ylab("Lattitude") + 
+                 ggtitle("Pb residuals map (no outliers)") +
+                 theme(plot.title=element_text(hjust=0.5)) + 
+                 scale_color_gradient(name="Pb [mm]", low='yellow', high='darkblue')
+
+```
+
 
