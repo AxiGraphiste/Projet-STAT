@@ -27,9 +27,14 @@ library(latticeExtra)
 ```{r}
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
+data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+
 #data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#mets ton chemin ici Estelle
+
 
 head(data3)
 summary(data3)
@@ -280,20 +285,22 @@ grid.arrange(h1,p1,p2,gNA, h2,p3,gNA,gNA,h3,
 chart.Correlation(clean.data3[,.(Cd,Pb,Cr)])
 ```
 
+
 ```{r Cd variogram values}
 #First we create a gstat object
-clean.Cd.gstat <- gstat(formula = clean.Cd~1, data = clean.data3, locations = ~X+Y)
+clean.Cd.gstat <- gstat(formula = Cd~1, data = clean.data3, locations = ~X+Y)
 
-#Then we calculate the semi-variograme values
-clean.Cd.vario <- variogram(clean.Cd.gstat, cutoff = 8, width = 0.5)
-head(clean.Cd.vario)
+#Then we calculate the semi-variogram values
+Cd.vario <- variogram(clean.Cd.gstat, cutoff = 8, width = 0.5)
+head(Cd.vario)
 ```
 
 ```{r Cd variogram figure, results='hide'}
 #First we create a gstat object
-plot(clean.Cd.vario, main = "Variogram of Cd", pch=16,col='black')
+plot(Cd.vario, main = "Variogram of Cd", pch=16,col='black')
 
 trellis.focus("panel",1,1)
-llines(x=c(0,max(clean.Cd.vario$dist)), y=c(var(clean.data3$clean.Cd), var(clean.data3$clean.Cd)), col="red", lwd=1, lty=2)
+llines(x=c(0,max(Cd.vario$dist)), y=c(var(clean.data3$Cd), var(clean.data3$Cd)), col="red", lwd=1, lty=2)
 trellis.unfocus()
 ```
+
