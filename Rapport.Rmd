@@ -480,3 +480,33 @@ ggplot(clean.clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Pb), size=4) +
                  scale_color_gradient(name="Pb [mm]", low='yellow', high='darkblue')
 
 ```
+
+
+### Grille de prédiction
+
+```{r Grille de prédiction}
+
+gridsize = 2500
+x <- seq(floor(min(data3$X)), # longitude min (+ xxx pour ajouter une marje ?)
+         ceiling(max(data3$X)), # longitude max
+         by=gridsize)
+y <- seq(floor(min(data3$Y)), # latitude min
+         ceiling(max(data3$Y)), # latitude max
+         by=gridsize)
+data3.grid <- as.data.table(expand.grid(x=x, y=y)) 
+
+#affichage de la grille pour Cd
+
+ggplot() + geom_point(data=data3.grid, aes(x=x,y=y, fill="Grid points"), color="grey80", size=3, shape=3) + geom_point(data=clean.Cd, aes(x=X, y=Y, color=Cd), size=1) + labs(fill="", color="Cd [mg/m³]") + xlab("Longitude") + ylab("Latitude") + ggtitle("Cadmium concentration and prediction grid")
+
+
+#affichage de la grille pour Pb
+
+ggplot() + geom_point(data=data3.grid, aes(x=x,y=y, fill="Grid points"), color="grey80", size=3, shape=3) + geom_point(data=clean.Pb, aes(x=X, y=Y, color=Pb), size=1) + labs(fill="", color="Pb [mg/m³]") + xlab("Longitude") + ylab("Latitude") + ggtitle("Lead concentration and prediction grid")
+
+
+#affichage de la grille pour Cr
+
+ggplot() + geom_point(data=data3.grid, aes(x=x,y=y, fill="Grid points"), color="grey80", size=3, shape=3) + geom_point(data=clean.Cr, aes(x=X, y=Y, color=Cr), size=1) + labs(fill="", color="Cr [mg/m³]") + xlab("Longitude") + ylab("Latitude") + ggtitle("Cadmium concentration and prediction grid")
+
+```
