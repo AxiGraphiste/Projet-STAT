@@ -20,6 +20,7 @@ library(gstat)
 theme_set(theme_classic())
 library(car)
 library(latticeExtra)
+library(AID) 
 ```
 
 ## Introduction
@@ -28,12 +29,26 @@ library(latticeExtra)
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
 #data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
 summary(data3)
 ```
+
+### Récap nom de variable
+
+* data3 = base de données brute de base
+
+* Cdbx, Pbbx, Crbx = Transformation boxcox des différentes distribution de concentration de métaux pour en faire une distribution normale (pas forrcément nécessaire pour le chrome) --> ajouté dans nouvelle colonne à data3
+
+* data3.XX = retire toutes lignes comprenant un NA pour le métal XX
+
+* data3.NAclean = base de données data3 sans aucun NA
+
+* clean.XX = base de données data3 sans NA ni valeurs aberrantes pour le métal XX (boxcox)
+
+* clean.data3 = base de données data3 sans NA ni valeurs abberrantes pour tous les métaux (boxcox)
 
 ### Graphes 
 
@@ -77,43 +92,63 @@ map_Cr
 ### Outliers removal
 
 ```{r}
-#je commence par retirer les NA pour les différentes concentrations de métaux
+#Transformation boxcox Cadmium
 
-data3.Cd <- data3[rowSums(is.na(data3[,5]),) == 0, ] #retire tous les NA du cadmium
-data3.Pb <- data3[rowSums(is.na(data3[,6]),) == 0, ] #retire tous les NA du plomb
-data3.Cr <- data3[rowSums(is.na(data3[,7]),) == 0, ] #retire tous les NA du chrome
+Cdbx <- boxcoxnc(na.omit(data3$Cd), verbose = FALSE) # Find best alpha 
+data3[!is.na(Cd),Cdbx := Cdbx$tf.data] # Create column with transformed data
+alpha.Cd <- Cdbx$lambda.hat
+
+#Transformation boxcox Plomb
+
+Pbbx <- boxcoxnc(na.omit(data3$Pb), verbose = FALSE) # Find best alpha 
+data3[!is.na(Pb),Pbbx := Pbbx$tf.data] # Create column with transformed data
+alpha.Pb <- Pbbx$lambda.hat
+
+#Transformation boxcox Chrome --> #On en fait pas car distribution déjà normal
+
+Crbx <- boxcoxnc(na.omit(data3$Cr), verbose = FALSE) # Find best alpha 
+data3[!is.na(Cr),Crbx := Crbx$tf.data] # Create column with transformed data
+alpha.Cr <- Crbx$lambda.hat
+
+#je retire les NA pour les différentes concentrations de métaux
+
+data3.Cd <- data3[rowSums(is.na(data3[,5]),) == 0, ] #retire tous les NA du cadmium (version boxcox ou non)
+data3.Pb <- data3[rowSums(is.na(data3[,6]),) == 0, ] #retire tous les NA du plomb (version boxcox ou non)
+data3.Cr <- data3[rowSums(is.na(data3[,7]),) == 0, ] #retire tous les NA du chrome (version boxcox ou non)
 
 data3.NAclean <- data3[rowSums(is.na(data3),) == 0, ] #retire toutes les lignes avec au moins 1 NA
 
+
 #Pour le chrome
-sd.Cr <- sd(data3.Cr$Cr)
-mean.Cr <- mean(data3.Cr$Cr)
+sd.Cr <- sd(data3.Cr$Crbx)
+mean.Cr <- mean(data3.Cr$Crbx)
 sd.Cr
 mean.Cr
 
 #Pour le cadmium
-sd.Cd <- sd(data3.Cd$Cd)
-mean.Cd <- mean(data3.Cd$Cd)
+sd.Cd <- sd(data3.Cd$Cdbx)
+mean.Cd <- mean(data3.Cd$Cdbx)
 
 #Pour le plomb
-sd.Pb <- sd(data3.Pb$Pb)
-mean.Pb <- mean(data3.Pb$Pb)
+sd.Pb <- sd(data3.Pb$Pbbx)
+mean.Pb <- mean(data3.Pb$Pbbx)
 
 #Maintenant je vais retirer les outliers (= valeurs aberrantes) du jeu de données en ne conservant que les données avec une valeur situé entre + et - 3 fois l'écart-type (= standard deviation) de la moyenne (= mean) pour CHAQUE concentration indépendamment, pour ne perdre aucune info sur les cartes individuelles des métaux
 
-clean.Cr <- data3.Cr[data3.Cr$Cr %between% c(mean.Cr-2.5*sd.Cr,mean.Cr+2.5*sd.Cr),]
+clean.Cd <- data3.Cd[data3.Cd$Cdbx %between% c(mean.Cd-3*sd.Cd,mean.Cd+3*sd.Cd),]
 
-clean.Pb <- data3.Pb[data3.Pb$Pb %between% c(mean.Pb-2.5*sd.Pb,mean.Pb+2.5*sd.Pb),]
+clean.Pb <- data3.Pb[data3.Pb$Pbbx %between% c(mean.Pb-3*sd.Pb,mean.Pb+3*sd.Pb),]
 
-clean.Cd <- data3.Cd[data3.Cd$Cd %between% c(mean.Cd-2.5*sd.Cd,mean.Cd+2.5*sd.Cd),]
+clean.Cr <- data3.Cr[data3.Cr$Crbx %between% c(mean.Cr-3*sd.Cr,mean.Cr+3*sd.Cr),]
 
 #la je retire au fur et à mesure les valeurs aberrantes des différents métaux pour obtenir un data3 final qui est clean, sans NA ni valeurs aberrantes pour l'ensemble des métaux
 
 #sert à comparer les concentrations là où il existe les 3 valeurs (et aucune aberrantes)
 
-clean.data3 <- data3.NAclean[data3.NAclean$Cr %between% c(mean.Cr-2.5*sd.Cr,mean.Cr+2.5*sd.Cr),] #commence avec data3.NAclean pour retirer toutes les lignes avec au moins 1 NA (puisuq'on veut comparer toutes les concentrations entre elles: pas d'intérêt de garder les points avec une ou deux concentrations manquantes)
-clean.data3 <- clean.data3[clean.data3$Pb %between% c(mean.Pb-2.5*sd.Pb,mean.Pb+2.5*sd.Pb),]
-clean.data3 <- clean.data3[clean.data3$Cd %between% c(mean.Cd-2.5*sd.Cd,mean.Cd+2.5*sd.Cd),] #data3 sans NA ni valeurs aberrantes final.
+clean.data3 <- data3.NAclean[data3.NAclean$Crbx %between% c(mean.Cr-3*sd.Cr,mean.Cr+3*sd.Cr),] #commence avec data3.NAclean pour retirer toutes les lignes avec au moins 1 NA (puisuq'on veut comparer toutes les concentrations entre elles: pas d'intérêt de garder les points avec une ou deux concentrations manquantes)
+clean.data3 <- clean.data3[clean.data3$Pbbx %between% c(mean.Pb-3*sd.Pb,mean.Pb+3*sd.Pb),]
+clean.data3 <- clean.data3[clean.data3$Cdbx %between% c(mean.Cd-3*sd.Cd,mean.Cd+3*sd.Cd),] #data3 sans NA ni valeurs aberrantes final.
+
 
 ```
 
@@ -123,9 +158,9 @@ clean.data3 <- clean.data3[clean.data3$Cd %between% c(mean.Cd-2.5*sd.Cd,mean.Cd+
 
 ```{r}
 #Cadmium
-map_Cd <- ggplot(clean.Cd) + geom_point(aes(x=X, y=Y, color=Cd), size=1) + 
+map_Cd <- ggplot(data3.Cd) + geom_point(aes(x=X, y=Y, color=Cd), size=1) + 
                  xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Cadmium measures map (no outliers)") +
+                 ggtitle("Cadmium measures map (no NA)") +
                  theme(plot.title=element_text(hjust=0.5)) + # center title
                  scale_color_gradient(name="Cadmium [mg/kg]", low='yellow', high='darkblue')
 map_Cd
@@ -135,9 +170,9 @@ map_Cd
 
 ```{r}
 #Plomb
-map_Pb <- ggplot(clean.Pb) + geom_point(aes(x=X, y=Y, color=Pb), size=1) + 
+map_Pb <- ggplot(data3.Pb) + geom_point(aes(x=X, y=Y, color=Pb), size=1) + 
                  xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Lead measures map (no outliers") +
+                 ggtitle("Lead measures map (no NA)") +
                  theme(plot.title=element_text(hjust=0.5)) + # center title
                  scale_color_gradient(name="Lead [mg/kg]", low='lightblue', high='darkblue')
 map_Pb
@@ -147,9 +182,9 @@ map_Pb
 
 ```{r}
 #Chrome
-map_Cr <- ggplot(clean.Cr) + geom_point(aes(x=X, y=Y, color=Cr), size=1) + 
+map_Cr <- ggplot(data3.Cr) + geom_point(aes(x=X, y=Y, color=Cr), size=1) + 
                  xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Chrome measures map") +
+                 ggtitle("Chrome measures map (no NA)") +
                  theme(plot.title=element_text(hjust=0.5)) + # center title
                  scale_color_gradient(name="Chrome [mg/kg]", low='yellow', high='darkgreen')
 map_Cr
@@ -442,5 +477,3 @@ ggplot(clean.clean.data3) + geom_point(aes(x=X, y=Y, color=clean.Pb), size=4) +
                  scale_color_gradient(name="Pb [mm]", low='yellow', high='darkblue')
 
 ```
-
-
