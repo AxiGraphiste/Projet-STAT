@@ -195,7 +195,7 @@ map_Cr
 
 ```{r}
 #Cadmium
-ggplot(clean.data3, aes(x = Cd)) + # if you put 'aes' here, all geom_ functions will use rain as x
+ggplot(clean.Cd, aes(x = Cdbx)) +
   geom_histogram(aes(y = ..density..,  # display density function (and not count)
                      fill = "Density histogram" ),
                  bins = 15, # number of bins
@@ -207,32 +207,32 @@ ggplot(clean.data3, aes(x = Cd)) + # if you put 'aes' here, all geom_ functions 
   ylab("f(x)") + 
   ggtitle("Density histogram of the Cadmium content") +
   stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(clean.data3$Cd), sd = sd(clean.data3$Cd)), # with mean and sd of rain
+                args=list(mean = mean(clean.Cd$Cdbx), sd = sd(clean.Cd$Cdbx)), 
                 aes(color="Normal pdf"),
                 size= 1) + # width of the line
   scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
                                     "Fitted pdf"=alpha("lightsteelblue3",.2))) +
   scale_color_manual("", values="red")
 
-ggplot(clean.data3, aes(x = Cd)) + 
+ggplot(clean.Cd, aes(x = Cdbx)) + 
   stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
   xlab("Cd content [mg/kg]") + 
   ylab("F(x)") + 
   ggtitle("Estimated vs normal cdf of the Cadmium content") +
   stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(clean.data3$Cd), sd = sd(clean.data3$Cd)), 
+                args = list(mean = mean(clean.Cd$Cdbx), sd = sd(clean.Cd$Cdbx)), 
                 aes(color = 'Normal cdf'),
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
 
 #Pour voir si ça suit le normal
-qqPlot(clean.data3$Cd)
+qqPlot(clean.Cd$Cdbx)
 ```
 
 ```{r}
 #Plomb
-ggplot(clean.data3, aes(x = Pb)) + # if you put 'aes' here, all geom_ functions will use rain as x
+ggplot(clean.Pb, aes(x = Pbbx)) + 
   geom_histogram(aes(y = ..density..,  # display density function (and not count)
                      fill = "Density histogram" ),
                  bins = 15, # number of bins
@@ -240,35 +240,35 @@ ggplot(clean.data3, aes(x = Pb)) + # if you put 'aes' here, all geom_ functions 
   geom_density(col = "lightsteelblue3", 
                aes(fill = "Fitted pdf"), 
                alpha = 0.2) +  
-  xlab("Cd content [mg/kg]") + 
+  xlab("Pb content [mg/kg]") + 
   ylab("f(x)") + 
   ggtitle("Density histogram of the Lead content") +
   stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(clean.data3$Pb), sd = sd(clean.data3$Pb)), # with mean and sd of rain
+                args=list(mean = mean(clean.Pb$Pbbx), sd = sd(clean.Pb$Pbbx)), 
                 aes(color="Normal pdf"),
                 size= 1) + # width of the line
   scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
                                     "Fitted pdf"=alpha("lightsteelblue3",.2))) +
   scale_color_manual("", values="red")
 
-ggplot(clean.data3, aes(x = Pb)) + 
+ggplot(clean.Pb, aes(x = Pbbx)) + 
   stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
-  xlab("Cd content [mg/kg]") + 
+  xlab("Pb content [mg/kg]") + 
   ylab("F(x)") + 
   ggtitle("Estimated vs normal cdf of the Lead content") +
   stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(clean.data3$Pb), sd = sd(clean.data3$Pb)), 
+                args = list(mean = mean(clean.Pb$Pbbx), sd = sd(clean.Pb$Pbbx)), 
                 aes(color = 'Normal cdf'),
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
 #Pour voir si ça suit le normal
-qqPlot(clean.data3$Pb)
+qqPlot(clean.Pb$Pbbx)
 ```
 
 ```{r}
-#Chrome
-ggplot(clean.data3, aes(x = Cr)) + # if you put 'aes' here, all geom_ functions will use rain as x
+#Chrome 
+ggplot(clean.Cr, aes(x = Crbx)) +
   geom_histogram(aes(y = ..density..,  # display density function (and not count)
                      fill = "Density histogram" ),
                  bins = 15, # number of bins
@@ -276,31 +276,31 @@ ggplot(clean.data3, aes(x = Cr)) + # if you put 'aes' here, all geom_ functions 
   geom_density(col = "lightsteelblue3", 
                aes(fill = "Fitted pdf"), 
                alpha = 0.2) +  
-  xlab("Cd content [mg/kg]") + 
+  xlab("Cr content [mg/kg]") + 
   ylab("f(x)") + 
   ggtitle("Density histogram of the Chrome content") +
   stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(clean.data3$Cr), sd = sd(clean.data3$Cr)), # with mean and sd of rain
+                args=list(mean = mean(clean.Cr$Crbx), sd = sd(clean.Cr$Crbx)), 
                 aes(color="Normal pdf"),
                 size= 1) + # width of the line
   scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
                                     "Fitted pdf"=alpha("lightsteelblue3",.2))) +
   scale_color_manual("", values="red")
 
-ggplot(clean.data3, aes(x = Cr)) + 
+ggplot(clean.Cr, aes(x = Crbx)) + 
   stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
-  xlab("Cd content [mg/kg]") + 
+  xlab("Cr content [mg/kg]") + 
   ylab("F(x)") + 
   ggtitle("Estimated vs normal cdf of the Chrome content") +
   stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(clean.data3$Cr), sd = sd(clean.data3$Cr)), 
+                args = list(mean = mean(clean.Cr$Crbx), sd = sd(clean.Cr$Crbx)), 
                 aes(color = 'Normal cdf'),
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
 
 #Pour voir si ça suit le normal
-qqPlot(clean.data3$Cr)
+qqPlot(clean.Cr$Crbx)
 ```
 
 
