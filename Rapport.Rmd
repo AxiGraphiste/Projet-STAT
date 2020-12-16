@@ -50,6 +50,7 @@ summary(data3)
 
 * clean.data3 = base de données data3 sans NA ni valeurs abberrantes pour tous les métaux (boxcox)
 
+
 ### Graphes 
 
 #### Cadmium
@@ -307,13 +308,13 @@ qqPlot(clean.Cr$Crbx)
 ### Corrélations
 
 ```{r}
-#scatterplots
-h1 <- ggplot(clean.data3) + geom_histogram(aes(x=Cd), bins=10, color='white')
-h2 <- ggplot(clean.data3) + geom_histogram(aes(x=Pb), bins=10, color='white')
-h3 <- ggplot(clean.data3) + geom_histogram(aes(x=Cr), bins=10, color='white')
-p1 <- ggplot(clean.data3) + geom_point(aes(x=Cd, y=Pb))
-p2 <- ggplot(clean.data3) + geom_point(aes(x=Cd, y=Cr))
-p3 <- ggplot(clean.data3) + geom_point(aes(x=Pb, y=Cr))
+#scatterplots (avec valeurs transformé boxcox)
+h1 <- ggplot(clean.data3) + geom_histogram(aes(x=Cdbx), bins=10, color='white')
+h2 <- ggplot(clean.data3) + geom_histogram(aes(x=Pbbx), bins=10, color='white')
+h3 <- ggplot(clean.data3) + geom_histogram(aes(x=Crbx), bins=10, color='white')
+p1 <- ggplot(clean.data3) + geom_point(aes(x=Cdbx, y=Pbbx))
+p2 <- ggplot(clean.data3) + geom_point(aes(x=Cdbx, y=Crbx))
+p3 <- ggplot(clean.data3) + geom_point(aes(x=Pbbx, y=Crbx))
 gNA <- ggplot(clean.data3) + theme_void() # This is just an empty plot.
 
 grid.arrange(h1,p1,p2,gNA, h2,p3,gNA,gNA,h3,
