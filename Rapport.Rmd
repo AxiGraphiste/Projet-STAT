@@ -29,7 +29,7 @@ library(latticeExtra)
 
 #data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
 summary(data3)
@@ -190,6 +190,9 @@ ggplot(clean.data3, aes(x = Cd)) +
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
+
+#Pour voir si ça suit le normal
+qqPlot(clean.data3$Cd)
 ```
 
 ```{r}
@@ -224,6 +227,8 @@ ggplot(clean.data3, aes(x = Pb)) +
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
+#Pour voir si ça suit le normal
+qqPlot(clean.data3$Pb)
 ```
 
 ```{r}
@@ -258,6 +263,9 @@ ggplot(clean.data3, aes(x = Cr)) +
                 size= 1) +
   scale_color_manual("", values = c("Estimated cdf" = "black",
                                     "Normal cdf" = "red")) 
+
+#Pour voir si ça suit le normal
+qqPlot(clean.data3$Cr)
 ```
 
 
