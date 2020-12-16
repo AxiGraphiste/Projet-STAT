@@ -29,7 +29,7 @@ library(latticeExtra)
 
 #data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
 summary(data3)
@@ -305,7 +305,7 @@ trellis.unfocus()
 ```{r Cr variogram values}
 #Code
 Cr.gstat <- gstat(formula = Cr~1, data = clean.data3, locations = ~X+Y)
-Cr.vario <- variogram(Cr.gstat, cutoff =800000 , width = 2000)
+Cr.vario <- variogram(Cr.gstat, cutoff =10000 , width = 1000)
 vg.model <- vgm(psill = 100, model ='Exp' , range= 1200)
 fit.vg.model <- fit.variogram(Cr.vario, model=vg.model)
 plot(Cr.vario, model=fit.vg.model, main="Variogram of Cr", pch=16, col="black")
