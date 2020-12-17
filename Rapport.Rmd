@@ -473,6 +473,38 @@ mean(Cd.idw$Cd.pred)
 
 ```
 
+### Co-krigeage
+
+```{r cross vario}
+g <- gstat(id="Cd", formula=Cd~1, data=na.omit(clean.data3), locations=~X+Y)
+
+# Before adding the chloride data to our gstat object, we will compute the optimized semi-variogram of Calcium
+Cd.vario <- variogram(g, cutoff=11, width=1)
+Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
+plot(Cd.vario,Cd.vg.fit)
+
+# Then we add the chloride data to the gstat object
+g <- gstat(g, id="Pb", formula=Pb~1, data=na.omit(clean.data3), locations=~X+Y)
+v.cross <- variogram(g, cutoff=11, width=1)
+```
+
+```{r}
+#montrer les cross-variogrammes
+plot(v.cross)
+```
+
+
+```{r}
+#créer la grid de prédiction
+gridsize = 0.5
+x <- seq(floor(min(clean.data3$X)), # from minimum longitude
+         ceiling(max(clean.data3$X)), # to maximum longitude
+         by=gridsize)
+y <- seq(floor(min(clean.data3$Y)), # from minimum latitude
+         ceiling(max(clean.data3$Y)), # to maximum latitude
+         by=gridsize)
+dyle.grid <- as.data.table(expand.grid(x=x, y=y)) # create a data.table containing all grid points
+```
 
 ### carte de risque
 ```{r Risk}
