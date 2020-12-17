@@ -441,7 +441,40 @@ ggplot() + geom_point(data = risk, aes(x=x,y=y)) + geom_point(data = risk[Cam>80
   ylab("Latitude") +
   ggtitle("High risk areas")
 ```
+### Prédiction des variables: Distance inverse (idw)
 
+#### idw du Cadmium
+```{r Prédiction des variables: Distance inverse OU 'inverse distance weigthed (idw) interpolation du CADMIUM}
+
+Cd.idw <- idw(formula = Cdbx~1, data = na.omit(data3), locations = ~x+y, newdata = na.omit(data3.grid), idp = 2, nmax=20, maxdist=20)
+
+setnames(Cd.idw, "var1.pred", "Cd.pred")
+
+# We create a function to plot results to avoid copy pasting many lines of code. 
+plot.predictions <- function(clean.Cd, plot.title){
+  ggplot() + 
+  geom_tile(data=data, 
+            aes(x = x, y = y, fill = Cd.pred)) +
+  geom_point(data=clean.Cd, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=3) +
+  scale_color_manual("", values="white") +
+  labs(fill="Cd predictions [mg/m³]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle(plot.title)
+}
+
+plot.predictions(Cd.idw, "Cadmium concentration in the Province of Liege - Inverse Distance prediction")
+mean(Cd.idw$Cd.pred)
+
+```
+
+
+### carte de risque
 ```{r Risk}
 data3.grid <- as.data.table(data3.grid)
 ishigh <- data3.grid[,-c(1,2)] > 800
@@ -456,5 +489,6 @@ ggplot() + geom_point(data = risk, aes(x=x,y=y)) + geom_point(data = risk[Cam>80
   ylab("Latitude") +
   ggtitle("High risk areas")
 ```
+
 
 
