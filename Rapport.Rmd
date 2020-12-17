@@ -443,40 +443,93 @@ plot.predictions <- function(clean.Cd, plot.title){
   ggtitle(plot.title)
 }
 
-ggplot() + 
-  geom_tile(data=Cd.idw, 
-            aes(x = X, y = Y, fill = Cd.pred)) +
-  geom_point(data=clean.Cd, 
-             aes(x=X, y=Y, color="Measurement points"),
-             shape=18,
-             size=3) +
-  scale_color_manual("", values="white") +
-  labs(fill="Cdbx predictions [mg/m³]") +
-  theme(legend.key = element_rect(fill = "#34668c", 
-                                  color = NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("Prediction of the boxcox transformed cadmium data")
+ggplot() + geom_tile(data=Cd.idw, aes(x = X, y = Y, fill = Cd.pred)) + geom_point(data=clean.Cd, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cdbx predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of the boxcox transformation of cadmium concentration")
+
 
 # transformation boxcox inverse:
-Cd.idw <- Cd.idw[,Cd.pred := exp(log(alpha.Cd * Cdbx.pred + 1) / alpha.Cd)]
+Cd.idw <- as.data.table(Cd.idw)
+is.data.table(Cd.idw)
+Cd.idw[,Cd.pred := (exp(log(alpha.Cd * Cd.pred + 1) / alpha.Cd))]
 
 # on replot avec les bonnes concentrations
-ggplot() + 
-  geom_tile(data=Cd.idw, 
-            aes(x = X, y = Y, fill = Cd.pred)) +
-  geom_point(data=clean.Cd, 
+
+ggplot() + geom_tile(data=Cd.idw, aes(x = X, y = Y, fill = Cd.pred)) + geom_point(data=clean.Cd, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cd predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of cadmium concentration")
+```
+
+#### idw du Plomb
+```{r Prédiction des variables: Distance inverse OU 'inverse distance weigthed (idw) interpolation du PLOMB}
+
+Pb.idw <- idw(formula = Pbbx~1, data = clean.Pb, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
+
+setnames(Pb.idw, "var1.pred", "Pb.pred")
+
+# On crée la prédiction
+plot.predictions <- function(clean.Pb, plot.title){
+  ggplot() + 
+  geom_tile(data=data, 
+            aes(x = X, y = Y, fill = Pb.pred)) +
+  geom_point(data=clean.Pb, 
              aes(x=X, y=Y, color="Measurement points"),
              shape=18,
              size=3) +
   scale_color_manual("", values="white") +
-  labs(fill="Cdbx predictions [mg/m³]") +
+  labs(fill="Pb predictions [mg/m³]") +
   theme(legend.key = element_rect(fill = "#34668c", 
                                   color = NA)) +
   xlab("Longitude") +
   ylab("Latitude") +
-  ggtitle("Prediction of cadmium data")
+  ggtitle(plot.title)
+}
 
+ggplot() + geom_tile(data=Pb.idw, aes(x = X, y = Y, fill = Pb.pred)) + geom_point(data=clean.Pb, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Pbbx predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of the boxcox transformation of lead concentration")
+
+
+# transformation boxcox inverse:
+Pb.idw <- as.data.table(Pb.idw)
+is.data.table(Pb.idw)
+Pb.idw[,Pb.pred := (exp(log(alpha.Pb * Pb.pred + 1) / alpha.Pb))]
+
+# on replot avec les bonnes concentrations
+
+ggplot() + geom_tile(data=Pb.idw, aes(x = X, y = Y, fill = Pb.pred)) + geom_point(data=clean.Pb, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Pb predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of lead concentration")
+```
+
+#### idw du Chrome
+```{r Prédiction des variables: Distance inverse OU 'inverse distance weigthed (idw) interpolation du CHROME}
+
+Cr.idw <- idw(formula = Crbx~1, data = clean.Cr, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
+
+setnames(Cr.idw, "var1.pred", "Cr.pred")
+
+# On crée la prédiction
+plot.predictions <- function(clean.Cr, plot.title){
+  ggplot() + 
+  geom_tile(data=data, 
+            aes(x = X, y = Y, fill = Cr.pred)) +
+  geom_point(data=clean.Cr, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=3) +
+  scale_color_manual("", values="white") +
+  labs(fill="Cr predictions [mg/m³]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle(plot.title)
+}
+
+ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_point(data=clean.Cr, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Crbx predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of the boxcox transformation chrome concentration")
+
+
+# transformation boxcox inverse:
+Cr.idw <- as.data.table(Cr.idw)
+is.data.table(Cr.idw)
+Cr.idw[,Cr.pred := (exp(log(alpha.Cr * Cr.pred + 1) / alpha.Cr))]
+
+# on replot avec les bonnes concentrations
+
+ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_point(data=clean.Cr, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cr predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of chrome concentration")
 ```
 
 
