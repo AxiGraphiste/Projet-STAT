@@ -30,8 +30,8 @@ library(krige)
 ```{r}
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
-data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
@@ -529,27 +529,184 @@ Cr.idw[,Cr.pred := (exp(log(alpha.Cr * Cr.pred + 1) / alpha.Cr))]
 ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_point(data=clean.Cr, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cr predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of chrome concentration")
 ```
 
+### Moyenne valeurs aux mêmes coordonnées
+```{r}
+#faire la moyenne des valeurs là il y a plusieurs valeurs au même point
+
+#Cadmium
+meanCd_IC <- clean.Cd[,list(moyCdbx=mean(Cdbx), 
+                         lower=quantile(Cdbx, 0.05),
+                         upper=quantile(Cdbx, 0.95)),
+                   by="X,Y"]
+
+#Plomb
+meanPb_IC <- clean.Pb[,list(moyPbbx=mean(Pbbx), 
+                         lower=quantile(Pbbx, 0.05),
+                         upper=quantile(Pbbx, 0.95)),
+                   by="X,Y"]
+
+#Chrome
+meanCr_IC <- clean.Cr[,list(moyCrbx=mean(Crbx), 
+                         lower=quantile(Crbx, 0.05),
+                         upper=quantile(Crbx, 0.95)),
+                   by="X,Y"]
+
+```
+
+
+
+### Krigeage
+
+#### Krigeage du cadmium
+```{r krigeage Cadmium}
+
+# Kriging Cadmium boxcox
+Cd.krig <- krige(formula = moyCdbx~1, data = meanCd_IC, locations = ~X+Y, newdata = data3.grid)
+setnames(Cd.krig, c("var1.pred", "var1.var"), c("Cd.pred", "Cd.varpred"))
+
+ggplot() + 
+  geom_tile(data=Cd.krig, 
+            aes(x = X, y = Y, fill = Cd.pred)) +
+  geom_point(data=meanCd_IC, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=1) +
+  scale_color_manual("", values="white") +
+  labs(fill="Cdbx concentration prediction [(mg/m³)²]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Cadmium (boxcox) concentration prediction - Krigeage prediction")
+
+
+# transformation boxcox inverse:
+Cd.krig <- as.data.table(Cd.krig)
+is.data.table(Cd.krig)
+Cd.krig[,Cd.pred := (exp(log(alpha.Cd * Cd.pred + 1) / alpha.Cd))]
+
+
+# Kriging plot Cadmium
+ggplot() + 
+  geom_tile(data=Cd.krig, 
+            aes(x = X, y = Y, fill = Cd.pred)) +
+  geom_point(data=meanCd_IC, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=1) +
+  scale_color_manual("", values="white") +
+  labs(fill="Cdbx concentration prediction [(mg/m³)²]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Cadmium concentration prediction - Krigeage prediction")
+
+```
+
+#### Krigeage du plomb
+```{r krigeage Plomb}
+
+# Kriging plot Plomb boxcox
+Pb.krig <- krige(formula = moyPbbx~1, data = meanPb_IC, locations = ~X+Y, newdata = data3.grid)
+setnames(Pb.krig, c("var1.pred", "var1.var"), c("Pb.pred", "Pb.varpred"))
+
+ggplot() + 
+  geom_tile(data=Pb.krig, 
+            aes(x = X, y = Y, fill = Pb.pred)) +
+  geom_point(data=meanPb_IC, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=1) +
+  scale_color_manual("", values="white") +
+  labs(fill="Pbbx concentration prediction [(mg/m³)²]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Lead (boxcox) concentration prediction - Krigeage prediction")
+
+
+# transformation boxcox inverse:
+Pb.krig <- as.data.table(Pb.krig)
+is.data.table(Pb.krig)
+Pb.krig[,Pb.pred := (exp(log(alpha.Pb * Pb.pred + 1) / alpha.Pb))]
+
+
+# Kriging plot Plomb
+ggplot() + 
+  geom_tile(data=Pb.krig, 
+            aes(x = X, y = Y, fill = Pb.pred)) +
+  geom_point(data=meanPb_IC, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=1) +
+  scale_color_manual("", values="white") +
+  labs(fill="Pb concentration prediction [(mg/m³)²]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Lead concentration prediction - Krigeage prediction")
+
+```
+
+#### Krigeage du Chrome
+```{r krigeage Chrome}
+
+# Kriging plot Chrome boxcox
+Cr.krig <- krige(formula = moyCrbx~1, data = meanCr_IC, locations = ~X+Y, newdata = data3.grid)
+setnames(Cr.krig, c("var1.pred", "var1.var"), c("Cr.pred", "Cr.varpred"))
+
+ggplot() + 
+  geom_tile(data=Cr.krig, 
+            aes(x = X, y = Y, fill = Cr.pred)) +
+  geom_point(data=meanCr_IC, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=1) +
+  scale_color_manual("", values="white") +
+  labs(fill="Crbx concentration prediction [(mg/m³)²]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Chrome (boxcox) concentration prediction - Krigeage prediction")
+
+
+# transformation boxcox inverse:
+Cr.krig <- as.data.table(Cr.krig)
+is.data.table(Pb.krig)
+Cr.krig[,Cr.pred := (exp(log(alpha.Cr * Cr.pred + 1) / alpha.Cr))]
+
+
+# Kriging plot Chrome
+ggplot() + 
+  geom_tile(data=Cr.krig, 
+            aes(x = X, y = Y, fill = Cr.pred)) +
+  geom_point(data=meanCr_IC, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=1) +
+  scale_color_manual("", values="white") +
+  labs(fill="Cr concentration prediction [(mg/m³)²]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Chrome concentration prediction - Krigeage prediction")
+
+```
+
 
 ### Co-krigeage
 
 #### Co-krigeage Cd feat Pb
 
-```{r}
-#faire la moyenne des valeurs là il y a plusieurs valeurs au même point
-meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx), 
-                         lower=quantile(Cdbx, 0.05),
-                         upper=quantile(Cdbx, 0.95)),
-                   by="X,Y"]
-
-meanPb_IC <- clean.Pb[,list(moyPb=mean(Pbbx), 
-                         lower=quantile(Pbbx, 0.05),
-                         upper=quantile(Pbbx, 0.95)),
-                   by="X,Y"]
-```
 
 ```{r cross vario}
 
-g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
+g <- gstat(id="moyCd", formula=moyCdbx~1, data=na.omit(meanCd_IC), locations=~X+Y)
 
 v.cross <- variogram(g, cutoff=10000, width=50)
 
@@ -559,7 +716,7 @@ Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
 plot(Cd.vario,Cd.vg.fit)
 
 # Then we add the Pb data to the gstat object
-g <- gstat(g, id="moyPb", formula=moyPb~1, data=na.omit(meanPb_IC), locations=~X+Y)
+g <- gstat(g, id="moyPb", formula=moyPbbx~1, data=na.omit(meanPb_IC), locations=~X+Y)
 v.cross <- variogram(g, cutoff=1000, width=20)
 ```
 
@@ -567,8 +724,6 @@ v.cross <- variogram(g, cutoff=1000, width=20)
 #montrer les cross-variogrammes
 plot(v.cross)
 ```
-
-
 
 ```{r}
 #prédiction des valeurs de Cd aux points de la grid, via co-krigeage
@@ -578,6 +733,32 @@ Cd.cok <- predict(g, data3.grid)
 
 ```{r}
 #graphe des valeurs prédites de Cd
+
+ggplot() + 
+  geom_tile(data=Cd.cok, 
+            aes(x=X, y=Y, fill=moyCd.pred)) +
+  geom_point(data=clean.data3, 
+             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
+             color="yellow") +
+  geom_point(data=na.omit(clean.data3), 
+             aes(x=X, y=Y, shape="Cd data", size="Cd data"),
+             color="white") +
+  scale_shape_manual("", values=c(1,8)) +
+  scale_size_manual("", values=c(4,1)) +
+  labs(fill="Cd predictions [mg/kg]") +
+  theme(legend.key=element_rect(fill="#34668c", 
+                                color=NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Cadmium cokriging prediction (using lead) - boxcox")
+
+# transformation boxcox inverse Cadmium:
+Cd.cok <- as.data.table(Cd.cok)
+is.data.table(Cd.cok)
+Cd.cok[,moyCd.pred := (exp(log(alpha.Cd * moyCd.pred + 1) / alpha.Cd))]
+
+
+# Plot co-krigeage avec concentrations réelles
 
 ggplot() + 
   geom_tile(data=Cd.cok, 
@@ -621,6 +802,9 @@ ggplot() +
   ggtitle("Cadmium cokriging variance")
 
 ````
+
+
+
 
 
 ### Carte de risque
