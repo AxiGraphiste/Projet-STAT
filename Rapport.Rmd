@@ -579,90 +579,58 @@ plot(v.cross)
 
 ### Carte de risque
 
-#### Risque Cadmium
-```{r Risk Cadmium}
-
-#Backup de Cd.sim
-# <- krige(formula = Cd~1, data = data3, loc=~X+Y, newdata = data3.grid, model = fit.vg.model, nsim = 1000, nmax = 20)
-
-
-# Les points de la grille avec une cc supérieure à X pour Cd
-
-data3.grid <- as.data.table(data3.grid)
-
-ishigh <- data3.grid[,-c(1,2)] > 20
-ishigh <- data3.grid[,-c(1,2)] > 2
-
-risk <- data.table(x=data3.grid$x, y = data3.grid$y, Cam = rowSums(ishigh)/10)
-
-ggplot() + geom_point(data = risk, aes(x=x,y=y)) + geom_point(data = risk[Cam>80,], 
-                                                              aes(x=x,y=y), 
-                                                              shape = 1, 
-                                                              color = 'red',
-                                                              size = 3) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("High risk areas")
-
-# Color map
-ggplot() + geom_tile(data = risk, aes(x=x,y=y, fill=Cam))+
-  labs(fill="P(Cd > 20mg/m³)") +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("High cadium concentration")
-
-
-# C'était là avant, jsp à quoi ça sert mais je te le garde en backup ici
-data3.grid <- as.data.table(data3.grid)
-ishigh <- data3.grid[,-c(1,2)] > 800
-risk <- data.table(x=data3.grid$x, y = data3.grid$y, Cam = rowSums(ishigh)/10)
-
-ggplot() + geom_point(data = risk, aes(x=x,y=y)) + geom_point(data = risk[Cam>80,], 
-                                                              aes(x=x,y=y), 
-                                                              shape = 1, 
-                                                              color = 'red',
-                                                              size = 3) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("High risk areas")
-```
-
-#### Risque Plomb
-```{r Risk Plomb}
-
-# Les points de la grille avec une cc supérieure à X pour Pb
-data3.grid <- as.data.table(data3.grid)
-ishigh <- data3.grid[,-c(1,2)] > 0.01
-risk <- data.table(x=data3.grid$x, y = data3.grid$y, Cam = rowSums(ishigh)/10)
-
-ggplot() + geom_point(data = risk, aes(x=x,y=y)) + geom_point(data = risk[Cam>80,], 
-                                                              aes(x=x,y=y), 
-                                                              shape = 1, 
-                                                              color = 'red',
-                                                              size = 3) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("High risk areas")
-
-
-```
-
 #### Risque Chrome
-```{r Risk Chrome}
 
-# Les points de la grille avec une cc supérieure à X pour Cr
-data3.grid <- as.data.table(data3.grid)
-ishigh <- data3.grid[,-c(1,2)] > 0.01
-risk <- data.table(x=data3.grid$x, y = data3.grid$y, Cam = rowSums(ishigh)/10)
+```{r Risk Cadmium}
+gridsize = 2500
+X <- seq(floor(min(data3$X)), # longitude min (+ xxx pour ajouter une marje ?)
+         ceiling(max(data3$X)), # longitude max
+         by=gridsize)
+Y <- seq(floor(min(data3$Y)), # latitude min
+         ceiling(max(data3$Y)), # latitude max
+         by=gridsize)
+data3.grid <- as.data.table(expand.grid(X=X, Y=Y)) 
 
-ggplot() + geom_point(data = risk, aes(x=x,y=y)) + geom_point(data = risk[Cam>80,], 
-                                                              aes(x=x,y=y), 
-                                                              shape = 1, 
-                                                              color = 'red',
+#Simulation
+Cd.idw <- idw(formula = Cdbx~1, data = clean.Cd, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
+setnames(Cd.idw, "var1.pred", "Cd.pred")
+
+#Display the result of the first simulation
+ggplot() + 
+  geom_tile(data=Cd.idw, 
+            aes(x = X, y = Y, fill=Cd.pred)) +
+  geom_point(data=clean.Cd, 
+             aes(x=X, y=Y, color="Measurement points"),
+             shape=18,
+             size=3) +
+  scale_color_manual("", values="white") +
+  labs(fill="Cdbx predictions [mg/m³]") +
+  theme(legend.key = element_rect(fill = "#34668c", 
+                                  color = NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Prediction of cadmium data")
+
+#Find the point of the grid avec la bonne proba et concentration
+Cd.idw <- as.data.table(Cd.idw)
+ishigh <- Cd.idw[,-c(1,2)] > 15
+risk <- data.table(x=Cd.idw$x, y = Cd.idw$y, Cam = rowSums(ishigh)/10)
+
+ggplot() + geom_point(data = risk, aes(x=X,y=Y)) + geom_point(data = risk[Cam>80,], 
+                                                              aes(x=X, y=Y, 
+                                                              color = 'red'),
+                                                              shape = 1,
                                                               size = 3) +
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("High risk areas")
 
 
+
+#A color plot
+ggplot() + geom_tile(data = risk, aes(x=X,y=Y, fill=Cam))+
+  labs(fill="P(Cd > 20 mg/l)") +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("High cadmium concentration")
 ```
