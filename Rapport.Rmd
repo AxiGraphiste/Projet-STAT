@@ -28,10 +28,11 @@ library(krige)
 ### Introduction
 
 ```{r}
-#Retirer le '#' devant le fread correspondant à ton chemin en local
+#Retirer le '#' devant le fread correspondant à votre chemin en local
 
-#data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("tapez votre nom de chemin ici")
+data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
@@ -703,111 +704,6 @@ ggplot() +
 
 #### Co-krigeage Cd feat Pb
 
-
-```{r cross vario}
-
-g <- gstat(id="moyCd", formula=moyCdbx~1, data=na.omit(meanCd_IC), locations=~X+Y)
-
-v.cross <- variogram(g, cutoff=10000, width=50)
-
-#Before adding the Pb data to our gstat object, we will compute the optimized semi-variogram of Cadmium
-Cd.vario <- variogram(g, cutoff=6000, width=300)
-Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
-plot(Cd.vario,Cd.vg.fit)
-
-# Then we add the Pb data to the gstat object
-g <- gstat(g, id="moyPb", formula=moyPbbx~1, data=na.omit(meanPb_IC), locations=~X+Y)
-v.cross <- variogram(g, cutoff=1000, width=20)
-```
-
-```{r}
-#montrer les cross-variogrammes
-plot(v.cross)
-```
-
-```{r}
-#prédiction des valeurs de Cd aux points de la grid, via co-krigeage
-Cd.cok <- predict(g, data3.grid)
-
-```
-
-```{r}
-#graphe des valeurs prédites de Cd
-
-ggplot() + 
-  geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=moyCd.pred)) +
-  geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
-             color="yellow") +
-  geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="Cd data", size="Cd data"),
-             color="white") +
-  scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(4,1)) +
-  labs(fill="Cd predictions [mg/kg]") +
-  theme(legend.key=element_rect(fill="#34668c", 
-                                color=NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("Cadmium cokriging prediction (using lead) - boxcox")
-
-# transformation boxcox inverse Cadmium:
-Cd.cok <- as.data.table(Cd.cok)
-is.data.table(Cd.cok)
-Cd.cok[,moyCd.pred := (exp(log(alpha.Cd * moyCd.pred + 1) / alpha.Cd))]
-
-
-# Plot co-krigeage avec concentrations réelles
-
-ggplot() + 
-  geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=moyCd.pred)) +
-  geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
-             color="yellow") +
-  geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="Cd data", size="Cd data"),
-             color="white") +
-  scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(4,1)) +
-  labs(fill="Cd predictions [mg/kg]") +
-  theme(legend.key=element_rect(fill="#34668c", 
-                                color=NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("Cadmium cokriging prediction (using lead)")
-```
-
-````{r cokrigeage}
-
-Cd.var <- var(meanCd_IC$moyCd)
-
-ggplot() + 
-  geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=Cd.var)) +
-  geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
-             color="yellow") +
-  geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="Cd data", size="Cd data"),
-             color="white") +
-  scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(4,1)) +
-  labs(fill="Cd kriging variance") +
-  theme(legend.key=element_rect(fill="#34668c", 
-                                color=NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("Cadmium cokriging variance")
-
-````
-
-#DUPLIQUE --> GARDE CELUI SUR LEQUEL T'AS AVANCE
-### Co-krigeage 
-
-#### Co-krigeage Cd feat Pb
-
 ```{r}
 #faire la moyenne des valeurs là il y a plusieurs valeurs au même point
 meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx), 
@@ -898,7 +794,6 @@ ggplot() +
 ```
 
 
-
 ### Carte de risque
 
 #### Risque Chrome
@@ -955,5 +850,5 @@ ggplot() + geom_tile(data = risk, aes(x=X,y=Y, fill=Cam))+
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("High cadmium concentration")
->>>>>>> master
+
 ```
