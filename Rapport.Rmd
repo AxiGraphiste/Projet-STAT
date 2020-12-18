@@ -536,9 +536,9 @@ ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_poin
 
 ```{r}
 #faire la moyenne des valeurs là il y a plusieurs valeurs au même point
-meanCd_IC <- clean.Cd[,list(moyCd=mean(Cd), 
-                         lower=quantile(Cd, 0.05),
-                         upper=quantile(Cd, 0.95)),
+meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx), 
+                         lower=quantile(Cdbx, 0.05),
+                         upper=quantile(Cdbx, 0.95)),
                    by="X,Y"]
 
 ```
@@ -547,18 +547,18 @@ meanCd_IC <- clean.Cd[,list(moyCd=mean(Cd),
 
 g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
 
-v.cross <- variogram(g, cutoff=100, width=50)
+v.cross <- variogram(g, cutoff=10000, width=50)
 plot(v.cross, pch=16, col='black')
 
 
 #Before adding the Pb data to our gstat object, we will compute the optimized semi-variogram of Cadmium
-Cd.vario <- variogram(g, cutoff=1, width=0,1)
+Cd.vario <- variogram(g, cutoff=10000, width=1)
 Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
 plot(Cd.vario,Cd.vg.fit)
 
 # Then we add the Pb data to the gstat object
 g <- gstat(g, id="Pb", formula=Pb~1, data=na.omit(clean.data3), locations=~X+Y)
-v.cross <- variogram(g, cutoff=1, width=20)
+v.cross <- variogram(g, cutoff=10000, width=20)
 ```
 
 ```{r}
@@ -578,15 +578,15 @@ Cd.cok <- predict(g, data3.grid)
 
 ggplot() + 
   geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=Cd.pred)) +
+            aes(x=X, y=Y, fill=moyCd.pred)) +
   geom_point(data=clean.data3, 
              aes(x=X, y=Y, shape="Pb data", size="Pb data"),
              color="white") +
   geom_point(data=na.omit(clean.data3), 
              aes(x=X, y=Y, shape="Cadmium data", size="Cadmium data"),
-             color="white") +
-  scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(4,2)) +
+             color="yellow") +
+  scale_shape_manual("", values=c(1,3)) +
+  scale_size_manual("", values=c(4,1)) +
   labs(fill="Cd predictions [mg/l]") +
   theme(legend.key=element_rect(fill="#34668c", 
                                 color=NA)) +
