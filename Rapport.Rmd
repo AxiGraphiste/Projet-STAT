@@ -376,7 +376,7 @@ trellis.unfocus()
 
 ```{r Grille de prédiction générale}
 
-gridsize = 2500
+gridsize = 1000
 X <- seq(floor(min(data3$X)), # longitude min (+ xxx pour ajouter une marje ?)
          ceiling(max(data3$X)), # longitude max
          by=gridsize)
@@ -535,44 +535,64 @@ ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_poin
 #### Co-krigeage Cd feat Pb
 
 ```{r}
-#faire la moyenne des points là il y a plusieurs valeurs au même point
-precokrig_Cd <- clean.data3[,list(moyCd=mean(Cd), 
+#faire la moyenne des valeurs là il y a plusieurs valeurs au même point
+meanCd_IC <- clean.Cd[,list(moyCd=mean(Cd), 
                          lower=quantile(Cd, 0.05),
                          upper=quantile(Cd, 0.95)),
-                   by="Cd,X,Y"]
-
-#ggplot(data = meantemp_IC) + geom_line(aes(x=day, y=temp, color="Mean temperature")) +
- # geom_ribbon(aes(x = day, ymin=lower, ymax=upper, fill="90% Confidence interval"), alpha=0.4) +
-  #xlab("Day of the year") + 
-  #ylab("Mean temperature [°C]") +
-  #ggtitle("Evolution of the temperature throughout the year in Belgium") +
-  #scale_fill_manual(values = "lightsteelblue") +
-  #scale_color_manual(values = "black") + 
-  #theme(legend.title=element_blank())
+                   by="X,Y"]
 
 ```
 
 ```{r cross vario}
 
-g <- gstat(id="Cd", formula=Cd~1, data=na.omit(precokrig_Cd), locations=~X+Y)
+g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
 
-v.cross <- variogram(g, cutoff=10, width=0.75)
+v.cross <- variogram(g, cutoff=100, width=50)
 plot(v.cross, pch=16, col='black')
 
 
-#Before adding the chloride data to our gstat object, we will compute the optimized semi-variogram of Calcium
-Cd.vario <- variogram(g, cutoff=11, width=1)
+#Before adding the Pb data to our gstat object, we will compute the optimized semi-variogram of Cadmium
+Cd.vario <- variogram(g, cutoff=1, width=0,1)
 Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
 plot(Cd.vario,Cd.vg.fit)
 
-# Then we add the chloride data to the gstat object
+# Then we add the Pb data to the gstat object
 g <- gstat(g, id="Pb", formula=Pb~1, data=na.omit(clean.data3), locations=~X+Y)
-#v.cross <- variogram(g, cutoff=11, width=1)
+v.cross <- variogram(g, cutoff=1, width=20)
 ```
 
 ```{r}
 #montrer les cross-variogrammes
 plot(v.cross)
+```
+
+
+
+```{r}
+#prédiction des valeurs de Cd aux points de la grid, via co-krigeage
+Cd.cok <- predict(g, data3.grid)
+```
+
+```{r}
+#graphe des valeurs prédites de Cd
+
+ggplot() + 
+  geom_tile(data=Cd.cok, 
+            aes(x=X, y=Y, fill=Cd.pred)) +
+  geom_point(data=clean.data3, 
+             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
+             color="white") +
+  geom_point(data=na.omit(clean.data3), 
+             aes(x=X, y=Y, shape="Cadmium data", size="Cadmium data"),
+             color="white") +
+  scale_shape_manual("", values=c(1,8)) +
+  scale_size_manual("", values=c(4,2)) +
+  labs(fill="Cd predictions [mg/l]") +
+  theme(legend.key=element_rect(fill="#34668c", 
+                                color=NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Cadmium cokriging prediction (using lead)")
 ```
 
 
