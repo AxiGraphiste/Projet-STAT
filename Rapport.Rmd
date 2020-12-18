@@ -541,6 +541,10 @@ meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx),
                          upper=quantile(Cdbx, 0.95)),
                    by="X,Y"]
 
+meanPb_IC <- clean.Pb[,list(moyPb=mean(Pbbx), 
+                         lower=quantile(Pbbx, 0.05),
+                         upper=quantile(Pbbx, 0.95)),
+                   by="X,Y"]
 ```
 
 ```{r cross vario}
@@ -548,19 +552,14 @@ meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx),
 g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
 
 v.cross <- variogram(g, cutoff=10000, width=50)
-#plot(v.cross, pch=16, col='black')
-
 
 #Before adding the Pb data to our gstat object, we will compute the optimized semi-variogram of Cadmium
 Cd.vario <- variogram(g, cutoff=6000, width=300)
 Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
 plot(Cd.vario,Cd.vg.fit)
-trellis.focus("panel",1,1)
-llines(x=c(195331, 279509.0), y=c(93704, 163250.0), col="red", lwd=1, lty=2)
-trellis.unfocus()
 
 # Then we add the Pb data to the gstat object
-g <- gstat(g, id="Pb", formula=Pb~1, data=na.omit(clean.data3), locations=~X+Y)
+g <- gstat(g, id="moyPb", formula=moyPb~1, data=na.omit(meanPb_IC), locations=~X+Y)
 v.cross <- variogram(g, cutoff=1000, width=20)
 ```
 
@@ -574,6 +573,7 @@ plot(v.cross)
 ```{r}
 #prédiction des valeurs de Cd aux points de la grid, via co-krigeage
 Cd.cok <- predict(g, data3.grid)
+
 ```
 
 ```{r}
@@ -599,9 +599,12 @@ ggplot() +
 ```
 
 ````{r cokrigeage}
+
+Cd.var <- var(meanCd_IC$moyCd)
+
 ggplot() + 
   geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=moyCd.var)) +
+            aes(x=X, y=Y, fill=Cd.var)) +
   geom_point(data=clean.data3, 
              aes(x=X, y=Y, shape="Pb data", size="Pb data"),
              color="yellow") +
@@ -618,7 +621,6 @@ ggplot() +
   ggtitle("Cadmium cokriging variance")
 
 ````
-
 
 
 ### Carte de risque
