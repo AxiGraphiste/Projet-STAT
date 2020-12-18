@@ -551,29 +551,30 @@ meanPb_IC <- clean.Pb[,list(moyPb=mean(Pbbx),
 
 g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
 
-v.cross <- variogram(g, cutoff=10000, width=50)
-
-#Before adding the Pb data to our gstat object, we will compute the optimized semi-variogram of Cadmium
-Cd.vario <- variogram(g, cutoff=6000, width=300)
+#Avant d'ajouter les données de Pb à l'objet gstat, calcul du semi-variogramme optimisé du Cd
+Cd.vario <- variogram(g, cutoff=6000, width=500)
 Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
 plot(Cd.vario,Cd.vg.fit)
 
-# Then we add the Pb data to the gstat object
+#Ajout des données de Pb à l'objet gstat
 g <- gstat(g, id="moyPb", formula=moyPb~1, data=na.omit(meanPb_IC), locations=~X+Y)
-v.cross <- variogram(g, cutoff=1000, width=20)
+
 ```
 
 ```{r}
-#montrer les cross-variogrammes
-plot(v.cross)
+v.cross <- variogram(g, cutoff=3000, width=200)
+#montrer les variogrammes croisés
+plot(v.cross, model=g$model, col='black', pch=16)
+#Variance 
+llines(x=c(0.1, 0.3), y=c(500, 5000), col="red", lwd=1, lty=2)
+
 ```
 
 
 
 ```{r}
-#prédiction des valeurs de Cd aux points de la grid, via co-krigeage
+#prédiction des valeurs de Cd aux points de la grid
 Cd.cok <- predict(g, data3.grid)
-
 ```
 
 ```{r}
@@ -583,22 +584,22 @@ ggplot() +
   geom_tile(data=Cd.cok, 
             aes(x=X, y=Y, fill=moyCd.pred)) +
   geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
+             aes(x=X, y=Y, shape="données Pb", size="données Pb"),
              color="yellow") +
   geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="Cd data", size="Cd data"),
+             aes(x=X, y=Y, shape="données Cd", size="données Cd"),
              color="white") +
   scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(4,1)) +
-  labs(fill="Cd predictions [mg/kg]") +
+  scale_size_manual("", values=c(3,1)) +
+  labs(fill="Prédictions de Cd [mg/kg]") +
   theme(legend.key=element_rect(fill="#34668c", 
                                 color=NA)) +
   xlab("Longitude") +
   ylab("Latitude") +
-  ggtitle("Cadmium cokriging prediction (using lead)")
+  ggtitle("Prédiction du cadmium via co-krigeage (via Pb)")
 ```
 
-````{r cokrigeage}
+```{r cokrigeage}
 
 Cd.var <- var(meanCd_IC$moyCd)
 
@@ -606,21 +607,21 @@ ggplot() +
   geom_tile(data=Cd.cok, 
             aes(x=X, y=Y, fill=Cd.var)) +
   geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="Pb data", size="Pb data"),
+             aes(x=X, y=Y, shape="données Pb", size="données Pb"),
              color="yellow") +
   geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="Cd data", size="Cd data"),
+             aes(x=X, y=Y, shape="données Cd", size="données Cd"),
              color="white") +
   scale_shape_manual("", values=c(1,8)) +
   scale_size_manual("", values=c(4,1)) +
-  labs(fill="Cd kriging variance") +
+  labs(fill="variance co-krigeage Cd") +
   theme(legend.key=element_rect(fill="#34668c", 
                                 color=NA)) +
   xlab("Longitude") +
   ylab("Latitude") +
-  ggtitle("Cadmium cokriging variance")
+  ggtitle("variance du co-krigeage Cadmium")
 
-````
+```
 
 
 ### Carte de risque
