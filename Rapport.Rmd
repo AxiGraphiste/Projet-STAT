@@ -30,689 +30,6 @@ library(krige)
 ```{r}
 #Retirer le '#' devant le fread correspondant à ton chemin en local
 
-data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-
-head(data3)
-summary(data3)
-```
-
-### Récap nom de variable
-
-* data3 = base de données brute de base
-
-* Cdbx, Pbbx, Crbx = Transformation boxcox des différentes distribution de concentration de métaux pour en faire une distribution normale (pas forrcément nécessaire pour le chrome) --> ajouté dans nouvelle colonne à data3
-
-* data3.XX = retire toutes lignes comprenant un NA pour le métal XX
-
-* data3.NAclean = base de données data3 sans aucun NA
-
-* clean.XX = base de données data3 sans NA ni valeurs aberrantes pour le métal XX (boxcox)
-
-* clean.data3 = base de données data3 sans NA ni valeurs abberrantes pour tous les métaux (boxcox)
-
-
-### Graphes 
-
-#### Cadmium
-
-```{r}
-#Cadmium
-map_Cd <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Cd), size=1) + 
-                 xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Cadmium measures map") +
-                 theme(plot.title=element_text(hjust=0.5)) + # center title
-                 scale_color_gradient(name="Cadmium [mg/kg]", low='yellow', high='darkblue')
-map_Cd
-```
-
-#### Plomb
-
-```{r}
-#Plomb
-map_Pb <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Pb), size=1) + 
-                 xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Lead measures map") +
-                 theme(plot.title=element_text(hjust=0.5)) + # center title
-                 scale_color_gradient(name="Lead [mg/kg]", low='lightblue', high='darkblue')
-map_Pb
-```
-
-#### Chrome
-
-```{r}
-#Chrome
-map_Cr <- ggplot(data3) + geom_point(aes(x=X, y=Y, color=Cr), size=1) + 
-                 xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Chrome measures map") +
-                 theme(plot.title=element_text(hjust=0.5)) + # center title
-                 scale_color_gradient(name="Chrome [mg/kg]", low='yellow', high='darkgreen')
-map_Cr
-```
-
-
-### Outliers removal
-
-```{r}
-#Transformation boxcox Cadmium
-
-Cdbx <- boxcoxnc(na.omit(data3$Cd), verbose = FALSE) # Find best alpha 
-data3[!is.na(Cd),Cdbx := Cdbx$tf.data] # Create column with transformed data
-alpha.Cd <- Cdbx$lambda.hat
-
-#Transformation boxcox Plomb
-
-Pbbx <- boxcoxnc(na.omit(data3$Pb), verbose = FALSE) # Find best alpha 
-data3[!is.na(Pb),Pbbx := Pbbx$tf.data] # Create column with transformed data
-alpha.Pb <- Pbbx$lambda.hat
-
-#Transformation boxcox Chrome --> #On en fait pas car distribution déjà normal
-
-Crbx <- boxcoxnc(na.omit(data3$Cr), verbose = FALSE) # Find best alpha 
-data3[!is.na(Cr),Crbx := Crbx$tf.data] # Create column with transformed data
-alpha.Cr <- Crbx$lambda.hat
-
-#je retire les NA pour les différentes concentrations de métaux
-
-data3.Cd <- data3[rowSums(is.na(data3[,5]),) == 0, ] #retire tous les NA du cadmium (version boxcox ou non)
-data3.Pb <- data3[rowSums(is.na(data3[,6]),) == 0, ] #retire tous les NA du plomb (version boxcox ou non)
-data3.Cr <- data3[rowSums(is.na(data3[,7]),) == 0, ] #retire tous les NA du chrome (version boxcox ou non)
-
-data3.NAclean <- data3[rowSums(is.na(data3),) == 0, ] #retire toutes les lignes avec au moins 1 NA
-
-
-#Pour le chrome
-sd.Cr <- sd(data3.Cr$Crbx)
-mean.Cr <- mean(data3.Cr$Crbx)
-
-#Pour le cadmium
-sd.Cd <- sd(data3.Cd$Cdbx)
-mean.Cd <- mean(data3.Cd$Cdbx)
-
-#Pour le plomb
-sd.Pb <- sd(data3.Pb$Pbbx)
-mean.Pb <- mean(data3.Pb$Pbbx)
-
-#Maintenant je vais retirer les outliers (= valeurs aberrantes) du jeu de données en ne conservant que les données avec une valeur situé entre + et - 3 fois l'écart-type (= standard deviation) de la moyenne (= mean) pour CHAQUE concentration indépendamment, pour ne perdre aucune info sur les cartes individuelles des métaux
-
-clean.Cd <- data3.Cd[data3.Cd$Cdbx %between% c(mean.Cd-3*sd.Cd,mean.Cd+3*sd.Cd),]
-
-clean.Pb <- data3.Pb[data3.Pb$Pbbx %between% c(mean.Pb-3*sd.Pb,mean.Pb+3*sd.Pb),]
-
-clean.Cr <- data3.Cr[data3.Cr$Crbx %between% c(mean.Cr-3*sd.Cr,mean.Cr+3*sd.Cr),]
-
-#la je retire au fur et à mesure les valeurs aberrantes des différents métaux pour obtenir un data3 final qui est clean, sans NA ni valeurs aberrantes pour l'ensemble des métaux
-
-#sert à comparer les concentrations là où il existe les 3 valeurs (et aucune aberrantes)
-
-clean.data3 <- data3.NAclean[data3.NAclean$Crbx %between% c(mean.Cr-3*sd.Cr,mean.Cr+3*sd.Cr),] #commence avec data3.NAclean pour retirer toutes les lignes avec au moins 1 NA (puisuq'on veut comparer toutes les concentrations entre elles: pas d'intérêt de garder les points avec une ou deux concentrations manquantes)
-clean.data3 <- clean.data3[clean.data3$Pbbx %between% c(mean.Pb-3*sd.Pb,mean.Pb+3*sd.Pb),]
-clean.data3 <- clean.data3[clean.data3$Cdbx %between% c(mean.Cd-3*sd.Cd,mean.Cd+3*sd.Cd),] #data3 sans NA ni valeurs aberrantes final.
-
-
-```
-
-### Graphes sans outliers
-
-#### Cadmium sans outliers
-
-```{r}
-#Cadmium
-map_Cd <- ggplot(data3.Cd) + geom_point(aes(x=X, y=Y, color=Cd), size=1) + 
-                 xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Cadmium measures map (no NA)") +
-                 theme(plot.title=element_text(hjust=0.5)) + # center title
-                 scale_color_gradient(name="Cadmium [mg/kg]", low='yellow', high='darkblue')
-map_Cd
-```
-
-#### Plomb sans outliers
-
-```{r}
-#Plomb
-map_Pb <- ggplot(data3.Pb) + geom_point(aes(x=X, y=Y, color=Pb), size=1) + 
-                 xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Lead measures map (no NA)") +
-                 theme(plot.title=element_text(hjust=0.5)) + # center title
-                 scale_color_gradient(name="Lead [mg/kg]", low='lightblue', high='darkblue')
-map_Pb
-```
-
-#### Chrome sans outliers
-
-```{r}
-#Chrome
-map_Cr <- ggplot(data3.Cr) + geom_point(aes(x=X, y=Y, color=Cr), size=1) + 
-                 xlab("Longitude") + ylab("Lattitude") + 
-                 ggtitle("Chrome measures map (no NA)") +
-                 theme(plot.title=element_text(hjust=0.5)) + # center title
-                 scale_color_gradient(name="Chrome [mg/kg]", low='yellow', high='darkgreen')
-map_Cr
-```
-
-
-### Distribution des variables
-
-#### Distribution du Cadmium
-```{r}
-#Cadmium
-ggplot(clean.Cd, aes(x = Cdbx)) +
-  geom_histogram(aes(y = ..density..,  # display density function (and not count)
-                     fill = "Density histogram" ),
-                 bins = 15, # number of bins
-                 color = "white") + 
-  geom_density(col = "lightsteelblue3", 
-               aes(fill = "Fitted pdf"), 
-               alpha = 0.2) +  
-  xlab("Cd content [mg/kg]") + 
-  ylab("f(x)") + 
-  ggtitle("Density histogram of the Cadmium content") +
-  stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(clean.Cd$Cdbx), sd = sd(clean.Cd$Cdbx)), 
-                aes(color="Normal pdf"),
-                size= 1) + # width of the line
-  scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
-                                    "Fitted pdf"=alpha("lightsteelblue3",.2))) +
-  scale_color_manual("", values="red")
-
-ggplot(clean.Cd, aes(x = Cdbx)) + 
-  stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
-  xlab("Cd content [mg/kg]") + 
-  ylab("F(x)") + 
-  ggtitle("Estimated vs normal cdf of the Cadmium content") +
-  stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(clean.Cd$Cdbx), sd = sd(clean.Cd$Cdbx)), 
-                aes(color = 'Normal cdf'),
-                size= 1) +
-  scale_color_manual("", values = c("Estimated cdf" = "black",
-                                    "Normal cdf" = "red")) 
-
-#Pour voir si ça suit la normal
-qqPlot(clean.Cd$Cdbx)
-```
-
-#### Distribution du Plomb
-```{r}
-#Plomb
-ggplot(clean.Pb, aes(x = Pbbx)) + 
-  geom_histogram(aes(y = ..density..,  # display density function (and not count)
-                     fill = "Density histogram" ),
-                 bins = 15, # number of bins
-                 color = "white") + 
-  geom_density(col = "lightsteelblue3", 
-               aes(fill = "Fitted pdf"), 
-               alpha = 0.2) +  
-  xlab("Pb content [mg/kg]") + 
-  ylab("f(x)") + 
-  ggtitle("Density histogram of the Lead content") +
-  stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(clean.Pb$Pbbx), sd = sd(clean.Pb$Pbbx)), 
-                aes(color="Normal pdf"),
-                size= 1) + # width of the line
-  scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
-                                    "Fitted pdf"=alpha("lightsteelblue3",.2))) +
-  scale_color_manual("", values="red")
-
-ggplot(clean.Pb, aes(x = Pbbx)) + 
-  stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
-  xlab("Pb content [mg/kg]") + 
-  ylab("F(x)") + 
-  ggtitle("Estimated vs normal cdf of the Lead content") +
-  stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(clean.Pb$Pbbx), sd = sd(clean.Pb$Pbbx)), 
-                aes(color = 'Normal cdf'),
-                size= 1) +
-  scale_color_manual("", values = c("Estimated cdf" = "black",
-                                    "Normal cdf" = "red")) 
-#Pour voir si ça suit le normal
-qqPlot(clean.Pb$Pbbx)
-```
-
-#### Distribution du Chrome
-```{r}
-#Chrome 
-ggplot(clean.Cr, aes(x = Crbx)) +
-  geom_histogram(aes(y = ..density..,  # display density function (and not count)
-                     fill = "Density histogram" ),
-                 bins = 15, # number of bins
-                 color = "white") + 
-  geom_density(col = "lightsteelblue3", 
-               aes(fill = "Fitted pdf"), 
-               alpha = 0.2) +  
-  xlab("Cr content [mg/kg]") + 
-  ylab("f(x)") + 
-  ggtitle("Density histogram of the Chrome content") +
-  stat_function(fun=dnorm, # display a normal distribution
-                args=list(mean = mean(clean.Cr$Crbx), sd = sd(clean.Cr$Crbx)), 
-                aes(color="Normal pdf"),
-                size= 1) + # width of the line
-  scale_fill_manual("", values = c("Density histogram"="lightsteelblue2",
-                                    "Fitted pdf"=alpha("lightsteelblue3",.2))) +
-  scale_color_manual("", values="red")
-
-ggplot(clean.Cr, aes(x = Crbx)) + 
-  stat_ecdf(geom = "step", aes(color = "Estimated cdf")) +  # Estimated Cumulative Density Function
-  xlab("Cr content [mg/kg]") + 
-  ylab("F(x)") + 
-  ggtitle("Estimated vs normal cdf of the Chrome content") +
-  stat_function(fun = pnorm, # display a normal cumulative distribution
-                args = list(mean = mean(clean.Cr$Crbx), sd = sd(clean.Cr$Crbx)), 
-                aes(color = 'Normal cdf'),
-                size= 1) +
-  scale_color_manual("", values = c("Estimated cdf" = "black",
-                                    "Normal cdf" = "red")) 
-
-#Pour voir si ça suit le normal
-qqPlot(clean.Cr$Crbx)
-```
-
-
-### Corrélations
-
-```{r}
-#scatterplots (avec valeurs transformé boxcox)
-h1 <- ggplot(clean.data3) + geom_histogram(aes(x=Cdbx), bins=10, color='white')
-h2 <- ggplot(clean.data3) + geom_histogram(aes(x=Pbbx), bins=10, color='white')
-h3 <- ggplot(clean.data3) + geom_histogram(aes(x=Crbx), bins=10, color='white')
-p1 <- ggplot(clean.data3) + geom_point(aes(x=Cdbx, y=Pbbx))
-p2 <- ggplot(clean.data3) + geom_point(aes(x=Cdbx, y=Crbx))
-p3 <- ggplot(clean.data3) + geom_point(aes(x=Pbbx, y=Crbx))
-gNA <- ggplot(clean.data3) + theme_void() # This is just an empty plot.
-
-grid.arrange(h1,p1,p2,gNA, h2,p3,gNA,gNA,h3,
-             ncol=3, top="Scatterplots")
-
-#Correlation chart
-chart.Correlation(clean.data3[,.(Cdbx,Pbbx,Crbx)])
-```
-
-### Semi-variofram
-
-#### Semi-variogram pour Cd
-```{r Cd variogram values}
-#Code
-Cd.gstat <- gstat(formula = Cdbx~1, data = clean.Cd, locations = ~X+Y)
-Cd.vario <- variogram(Cd.gstat, cutoff =8000 , width = 798)
-vg.model <- vgm(psill = 2, model ='Exp' , range= 600)
-fit.vg.model <- fit.variogram(Cd.vario, model=vg.model)
-plot(Cd.vario, model=fit.vg.model, main="Variogram of Cd", pch=16, col="black")
-#Variance 
-trellis.focus("panel",1,1)
-llines(x=c(195900, 290500.0), y=c(99500, 163250.0), col="red", lwd=1, lty=2)
-trellis.unfocus()
-```
-
-#### Semi-variogram pour Pb
-```{r Pb variogram values}
-#Code
-Pb.gstat <- gstat(formula = Pbbx~1, data = clean.Pb, locations = ~X+Y)
-Pb.vario <- variogram(Pb.gstat, cutoff =3000 , width = 798)
-vg.model <- vgm(psill = 2, model ='Exp' , range= 600)
-fit.vg.model <- fit.variogram(Pb.vario, model=vg.model)
-plot(Pb.vario, model=fit.vg.model, main="Variogram of Pb", pch=16, col="black")
-#Variance 
-trellis.focus("panel",1,1)
-llines(x=c(195331, 279509.0), y=c(93704, 163250.0), col="red", lwd=1, lty=2)
-trellis.unfocus()
-```
-
-#### Semi-variogram pour Cr
-```{r Cr variogram values}
-#Code
-Cr.gstat <- gstat(formula = Crbx~1, data = clean.Cr, locations = ~X+Y)
-Cr.vario <- variogram(Cr.gstat, cutoff =10000 , width = 1000)
-vg.model <- vgm(psill = 100, model ='Exp' , range= 1200)
-fit.vg.model <- fit.variogram(Cr.vario, model=vg.model)
-plot(Cr.vario, model=fit.vg.model, main="Variogram of Cr", pch=16, col="black")
-#Variance 
-trellis.focus("panel",1,1)
-llines(x=c(195331, 291500.0), y=c(93704, 163250.0), col="red", lwd=1, lty=2)
-trellis.unfocus()
-```
-
-
-### Grilles de prédiction
-
-```{r Grille de prédiction générale}
-
-gridsize = 1000
-X <- seq(floor(min(data3$X)), # longitude min (+ xxx pour ajouter une marje ?)
-         ceiling(max(data3$X)), # longitude max
-         by=gridsize)
-Y <- seq(floor(min(data3$Y)), # latitude min
-         ceiling(max(data3$Y)), # latitude max
-         by=gridsize)
-data3.grid <- as.data.table(expand.grid(X=X, Y=Y)) 
-
-
-```
-
-#### Grille prédiction Cadmium
-```{r Grille de prédiction Cadmium}
-
-ggplot() + geom_point(data=data3.grid, aes(x=X,y=Y, fill="Grid points"), color="grey80", size=3, shape=3) + geom_point(data=clean.Cd, aes(x=X, y=Y, color=Cd), size=1) + labs(fill="", color="Cd [mg/m³]") + xlab("Longitude") + ylab("Latitude") + ggtitle("Cadmium concentration and prediction grid")
-
-
-```
-
-#### Grille prédiction Plomb
-```{r Grille de prédiction}
-
-ggplot() + geom_point(data=data3.grid, aes(x=X,y=Y, fill="Grid points"), color="grey80", size=3, shape=3) + geom_point(data=clean.Pb, aes(x=X, y=Y, color=Pb), size=1) + labs(fill="", color="Pb [mg/m³]") + xlab("Longitude") + ylab("Latitude") + ggtitle("Lead concentration and prediction grid")
-
-
-```
-
-#### Grille prédiction Chrome
-```{r Grille de prédiction}
-
-ggplot() + geom_point(data=data3.grid, aes(x=X,y=Y, fill="Grid points"), color="grey80", size=3, shape=3) + geom_point(data=clean.Cr, aes(x=X, y=Y, color=Cr), size=1) + labs(fill="", color="Cr [mg/m³]") + xlab("Longitude") + ylab("Latitude") + ggtitle("Cadmium concentration and prediction grid")
-
-
-```
-
-
-### Prédiction des variables: Distance inverse (idw)
-
-#### idw du Cadmium
-```{r Prédiction des variables: Distance inverse OU 'inverse distance weigthed (idw) interpolation du CADMIUM}
-
-Cd.idw <- idw(formula = Cdbx~1, data = clean.Cd, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
-
-setnames(Cd.idw, "var1.pred", "Cd.pred")
-
-# On crée la prédiction
-plot.predictions <- function(clean.Cd, plot.title){
-  ggplot() + 
-  geom_tile(data=data, 
-            aes(x = X, y = Y, fill = Cd.pred)) +
-  geom_point(data=clean.Cd, 
-             aes(x=X, y=Y, color="Measurement points"),
-             shape=18,
-             size=3) +
-  scale_color_manual("", values="white") +
-  labs(fill="Cd predictions [mg/m³]") +
-  theme(legend.key = element_rect(fill = "#34668c", 
-                                  color = NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle(plot.title)
-}
-
-ggplot() + geom_tile(data=Cd.idw, aes(x = X, y = Y, fill = Cd.pred)) + geom_point(data=clean.Cd, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cdbx predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of the boxcox transformation of cadmium concentration")
-
-
-# transformation boxcox inverse:
-Cd.idw <- as.data.table(Cd.idw)
-is.data.table(Cd.idw)
-Cd.idw[,Cd.pred := (exp(log(alpha.Cd * Cd.pred + 1) / alpha.Cd))]
-
-# on replot avec les bonnes concentrations
-
-ggplot() + geom_tile(data=Cd.idw, aes(x = X, y = Y, fill = Cd.pred)) + geom_point(data=clean.Cd, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cd predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of cadmium concentration")
-```
-
-#### idw du Plomb
-```{r Prédiction des variables: Distance inverse OU 'inverse distance weigthed (idw) interpolation du PLOMB}
-
-Pb.idw <- idw(formula = Pbbx~1, data = clean.Pb, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
-
-setnames(Pb.idw, "var1.pred", "Pb.pred")
-
-# On crée la prédiction
-plot.predictions <- function(clean.Pb, plot.title){
-  ggplot() + 
-  geom_tile(data=data, 
-            aes(x = X, y = Y, fill = Pb.pred)) +
-  geom_point(data=clean.Pb, 
-             aes(x=X, y=Y, color="Measurement points"),
-             shape=18,
-             size=3) +
-  scale_color_manual("", values="white") +
-  labs(fill="Pb predictions [mg/m³]") +
-  theme(legend.key = element_rect(fill = "#34668c", 
-                                  color = NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle(plot.title)
-}
-
-ggplot() + geom_tile(data=Pb.idw, aes(x = X, y = Y, fill = Pb.pred)) + geom_point(data=clean.Pb, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Pbbx predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of the boxcox transformation of lead concentration")
-
-
-# transformation boxcox inverse:
-Pb.idw <- as.data.table(Pb.idw)
-is.data.table(Pb.idw)
-Pb.idw[,Pb.pred := (exp(log(alpha.Pb * Pb.pred + 1) / alpha.Pb))]
-
-# on replot avec les bonnes concentrations
-
-ggplot() + geom_tile(data=Pb.idw, aes(x = X, y = Y, fill = Pb.pred)) + geom_point(data=clean.Pb, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Pb predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of lead concentration")
-```
-
-#### idw du Chrome
-```{r Prédiction des variables: Distance inverse OU 'inverse distance weigthed (idw) interpolation du CHROME}
-
-Cr.idw <- idw(formula = Crbx~1, data = clean.Cr, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
-
-setnames(Cr.idw, "var1.pred", "Cr.pred")
-
-# On crée la prédiction
-plot.predictions <- function(clean.Cr, plot.title){
-  ggplot() + 
-  geom_tile(data=data, 
-            aes(x = X, y = Y, fill = Cr.pred)) +
-  geom_point(data=clean.Cr, 
-             aes(x=X, y=Y, color="Measurement points"),
-             shape=18,
-             size=3) +
-  scale_color_manual("", values="white") +
-  labs(fill="Cr predictions [mg/m³]") +
-  theme(legend.key = element_rect(fill = "#34668c", 
-                                  color = NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle(plot.title)
-}
-
-ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_point(data=clean.Cr, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Crbx predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of the boxcox transformation chrome concentration")
-
-
-# transformation boxcox inverse:
-Cr.idw <- as.data.table(Cr.idw)
-is.data.table(Cr.idw)
-Cr.idw[,Cr.pred := (exp(log(alpha.Cr * Cr.pred + 1) / alpha.Cr))]
-
-# on replot avec les bonnes concentrations
-
-ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_point(data=clean.Cr, aes(x=X, y=Y, color="Measurement points"), shape=18, size=1) + scale_color_manual("", values="white") + labs(fill="Cr predictions [mg/m³]") + theme(legend.key = element_rect(fill = "#34668c", color = NA)) + xlab("Longitude") + ylab("Latitude") + ggtitle("Prediction of chrome concentration")
-```
-
-
-### Co-krigeage
-
-#### Co-krigeage Cd feat Pb
-
-```{r}
-#faire la moyenne des valeurs là il y a plusieurs valeurs au même point
-meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx), 
-                         lower=quantile(Cdbx, 0.05),
-                         upper=quantile(Cdbx, 0.95)),
-                   by="X,Y"]
-
-meanPb_IC <- clean.Pb[,list(moyPb=mean(Pbbx), 
-                         lower=quantile(Pbbx, 0.05),
-                         upper=quantile(Pbbx, 0.95)),
-                   by="X,Y"]
-```
-
-```{r cross vario}
-
-g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
-
-#Avant d'ajouter les données de Pb à l'objet gstat, calcul du semi-variogramme optimisé du Cd
-Cd.vario <- variogram(g, cutoff=6000, width=500)
-Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
-plot(Cd.vario,Cd.vg.fit)
-
-#Ajout des données de Pb à l'objet gstat
-g <- gstat(g, id="moyPb", formula=moyPb~1, data=na.omit(meanPb_IC), locations=~X+Y)
-
-```
-
-```{r}
-v.cross <- variogram(g, cutoff=3000, width=200)
-#montrer les variogrammes croisés
-plot(v.cross, model=g$model, col='black', pch=16)
-#Variance 
-llines(x=c(0.1, 0.3), y=c(500, 5000), col="red", lwd=1, lty=2)
-
-```
-
-
-
-```{r}
-#prédiction des valeurs de Cd aux points de la grid
-Cd.cok <- predict(g, data3.grid)
-```
-
-```{r}
-#graphe des valeurs prédites de Cd
-
-ggplot() + 
-  geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=moyCd.pred)) +
-  geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="données Pb", size="données Pb"),
-             color="yellow") +
-  geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="données Cd", size="données Cd"),
-             color="white") +
-  scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(3,1)) +
-  labs(fill="Prédictions de Cd [mg/kg]") +
-  theme(legend.key=element_rect(fill="#34668c", 
-                                color=NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("Prédiction du cadmium via co-krigeage (via Pb)")
-```
-
-```{r cokrigeage}
-
-Cd.var <- var(meanCd_IC$moyCd)
-
-ggplot() + 
-  geom_tile(data=Cd.cok, 
-            aes(x=X, y=Y, fill=Cd.var)) +
-  geom_point(data=clean.data3, 
-             aes(x=X, y=Y, shape="données Pb", size="données Pb"),
-             color="yellow") +
-  geom_point(data=na.omit(clean.data3), 
-             aes(x=X, y=Y, shape="données Cd", size="données Cd"),
-             color="white") +
-  scale_shape_manual("", values=c(1,8)) +
-  scale_size_manual("", values=c(4,1)) +
-  labs(fill="variance co-krigeage Cd") +
-  theme(legend.key=element_rect(fill="#34668c", 
-                                color=NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("variance du co-krigeage Cadmium")
-
-```
-
-
-### Carte de risque
-
-#### Risque Chrome
-
-```{r Risk Cadmium}
-gridsize = 2500
-X <- seq(floor(min(data3$X)), # longitude min (+ xxx pour ajouter une marje ?)
-         ceiling(max(data3$X)), # longitude max
-         by=gridsize)
-Y <- seq(floor(min(data3$Y)), # latitude min
-         ceiling(max(data3$Y)), # latitude max
-         by=gridsize)
-data3.grid <- as.data.table(expand.grid(X=X, Y=Y)) 
-
-#Simulation
-Cd.idw <- idw(formula = Cdbx~1, data = clean.Cd, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
-setnames(Cd.idw, "var1.pred", "Cd.pred")
-
-#Display the result of the first simulation
-ggplot() + 
-  geom_tile(data=Cd.idw, 
-            aes(x = X, y = Y, fill=Cd.pred)) +
-  geom_point(data=clean.Cd, 
-             aes(x=X, y=Y, color="Measurement points"),
-             shape=18,
-             size=3) +
-  scale_color_manual("", values="white") +
-  labs(fill="Cdbx predictions [mg/m³]") +
-  theme(legend.key = element_rect(fill = "#34668c", 
-                                  color = NA)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("Prediction of cadmium data")
-
-#Find the point of the grid avec la bonne proba et concentration
-Cd.idw <- as.data.table(Cd.idw)
-ishigh <- Cd.idw[,-c(1,2)] > 15
-risk <- data.table(x=Cd.idw$x, y = Cd.idw$y, Cam = rowSums(ishigh)/10)
-
-ggplot() + geom_point(data = risk, aes(x=X,y=Y)) + geom_point(data = risk[Cam>80,], 
-                                                              aes(x=X, y=Y, 
-                                                              color = 'red'),
-                                                              shape = 1,
-                                                              size = 3) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("High risk areas")
-
-
-
-#A color plot
-ggplot() + geom_tile(data = risk, aes(x=X,y=Y, fill=Cam))+
-  labs(fill="P(Cd > 20 mg/l)") +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  ggtitle("High cadmium concentration")
-=======
-
----
-title: "Data Science"
-author: "Merlin Gérard, Estelle Strade, Hugo Phipps"
-date: "11/8/2020"
-output: 
-  html_document: default
-  pdf_document: default
----
-
-```{r setup, include=FALSE}
-rm(list=ls())
-knitr::opts_chunk$set(echo = TRUE, message=FALSE )
-
-# Load your packages here
-library(data.table)
-library(ggplot2)
-library(PerformanceAnalytics)
-library(gridExtra)
-library(gstat)
-theme_set(theme_classic())
-library(car)
-library(latticeExtra)
-library(AID) 
-library(krige)
-```
-
-### Introduction
-
-```{r}
-#Retirer le '#' devant le fread correspondant à ton chemin en local
-
 #data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
@@ -1486,7 +803,99 @@ ggplot() +
 
 ````
 
+#DUPLIQUE --> GARDE CELUI SUR LEQUEL T'AS AVANCE
+### Co-krigeage 
 
+#### Co-krigeage Cd feat Pb
+
+```{r}
+#faire la moyenne des valeurs là il y a plusieurs valeurs au même point
+meanCd_IC <- clean.Cd[,list(moyCd=mean(Cdbx), 
+                         lower=quantile(Cdbx, 0.05),
+                         upper=quantile(Cdbx, 0.95)),
+                   by="X,Y"]
+
+meanPb_IC <- clean.Pb[,list(moyPb=mean(Pbbx), 
+                         lower=quantile(Pbbx, 0.05),
+                         upper=quantile(Pbbx, 0.95)),
+                   by="X,Y"]
+```
+
+```{r cross vario}
+
+g <- gstat(id="moyCd", formula=moyCd~1, data=na.omit(meanCd_IC), locations=~X+Y)
+
+#Avant d'ajouter les données de Pb à l'objet gstat, calcul du semi-variogramme optimisé du Cd
+Cd.vario <- variogram(g, cutoff=6000, width=500)
+Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
+plot(Cd.vario,Cd.vg.fit)
+
+#Ajout des données de Pb à l'objet gstat
+g <- gstat(g, id="moyPb", formula=moyPb~1, data=na.omit(meanPb_IC), locations=~X+Y)
+
+```
+
+```{r}
+v.cross <- variogram(g, cutoff=3000, width=200)
+#montrer les variogrammes croisés
+plot(v.cross, model=g$model, col='black', pch=16)
+#Variance 
+llines(x=c(0.1, 0.3), y=c(500, 5000), col="red", lwd=1, lty=2)
+
+```
+
+
+
+```{r}
+#prédiction des valeurs de Cd aux points de la grid
+Cd.cok <- predict(g, data3.grid)
+```
+
+```{r}
+#graphe des valeurs prédites de Cd
+
+ggplot() + 
+  geom_tile(data=Cd.cok, 
+            aes(x=X, y=Y, fill=moyCd.pred)) +
+  geom_point(data=clean.data3, 
+             aes(x=X, y=Y, shape="données Pb", size="données Pb"),
+             color="yellow") +
+  geom_point(data=na.omit(clean.data3), 
+             aes(x=X, y=Y, shape="données Cd", size="données Cd"),
+             color="white") +
+  scale_shape_manual("", values=c(1,8)) +
+  scale_size_manual("", values=c(3,1)) +
+  labs(fill="Prédictions de Cd [mg/kg]") +
+  theme(legend.key=element_rect(fill="#34668c", 
+                                color=NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("Prédiction du cadmium via co-krigeage (via Pb)")
+```
+
+```{r cokrigeage}
+
+Cd.var <- var(meanCd_IC$moyCd)
+
+ggplot() + 
+  geom_tile(data=Cd.cok, 
+            aes(x=X, y=Y, fill=Cd.var)) +
+  geom_point(data=clean.data3, 
+             aes(x=X, y=Y, shape="données Pb", size="données Pb"),
+             color="yellow") +
+  geom_point(data=na.omit(clean.data3), 
+             aes(x=X, y=Y, shape="données Cd", size="données Cd"),
+             color="white") +
+  scale_shape_manual("", values=c(1,8)) +
+  scale_size_manual("", values=c(4,1)) +
+  labs(fill="variance co-krigeage Cd") +
+  theme(legend.key=element_rect(fill="#34668c", 
+                                color=NA)) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  ggtitle("variance du co-krigeage Cadmium")
+
+```
 
 
 
