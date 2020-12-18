@@ -1,7 +1,4 @@
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
+
 ---
 title: "Data Science"
 author: "Merlin Gérard, Estelle Strade, Hugo Phipps"
@@ -536,17 +533,41 @@ ggplot() + geom_tile(data=Cr.idw, aes(x = X, y = Y, fill = Cr.pred)) + geom_poin
 ### Co-krigeage
 
 #### Co-krigeage Cd feat Pb
-```{r cross vario}
-g <- gstat(id="Cd", formula=Cd~1, data=na.omit(clean.data3), locations=~X+Y)
 
-# Before adding the chloride data to our gstat object, we will compute the optimized semi-variogram of Calcium
+```{r}
+#faire la moyenne des points là il y a plusieurs valeurs au même point
+precokrig_Cd <- clean.data3[,list(moyCd=mean(Cd), 
+                         lower=quantile(Cd, 0.05),
+                         upper=quantile(Cd, 0.95)),
+                   by="Cd,X,Y"]
+
+#ggplot(data = meantemp_IC) + geom_line(aes(x=day, y=temp, color="Mean temperature")) +
+ # geom_ribbon(aes(x = day, ymin=lower, ymax=upper, fill="90% Confidence interval"), alpha=0.4) +
+  #xlab("Day of the year") + 
+  #ylab("Mean temperature [°C]") +
+  #ggtitle("Evolution of the temperature throughout the year in Belgium") +
+  #scale_fill_manual(values = "lightsteelblue") +
+  #scale_color_manual(values = "black") + 
+  #theme(legend.title=element_blank())
+
+```
+
+```{r cross vario}
+
+g <- gstat(id="Cd", formula=Cd~1, data=na.omit(precokrig_Cd), locations=~X+Y)
+
+v.cross <- variogram(g, cutoff=10, width=0.75)
+plot(v.cross, pch=16, col='black')
+
+
+#Before adding the chloride data to our gstat object, we will compute the optimized semi-variogram of Calcium
 Cd.vario <- variogram(g, cutoff=11, width=1)
 Cd.vg.fit <- fit.variogram(Cd.vario, model=vgm(900,'Sph',8,400))
 plot(Cd.vario,Cd.vg.fit)
 
 # Then we add the chloride data to the gstat object
 g <- gstat(g, id="Pb", formula=Pb~1, data=na.omit(clean.data3), locations=~X+Y)
-v.cross <- variogram(g, cutoff=11, width=1)
+#v.cross <- variogram(g, cutoff=11, width=1)
 ```
 
 ```{r}
