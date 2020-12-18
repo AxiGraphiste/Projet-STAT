@@ -30,9 +30,9 @@ library(krige)
 ```{r}
 #Retirer le '#' devant le fread correspondant à votre chemin en local
 
-data3 <- fread("tapez votre nom de chemin ici")
-data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
-#data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+#data3 <- fread("tapez votre nom de chemin ici")
+#data3 <- fread("/Users/merlingerard/Desktop/projet_stat/Projet-STAT/groupe3.csv")
+data3 <- fread("C:/Users/hugop/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 #data3 <- fread("/Users/estellestrade/Desktop/projet_stat/Projet-STAT/groupe3.csv")
 
 head(data3)
@@ -799,27 +799,18 @@ ggplot() +
 #### Risque Chrome
 
 ```{r Risk Cadmium}
-gridsize = 2500
-X <- seq(floor(min(data3$X)), # longitude min (+ xxx pour ajouter une marje ?)
-         ceiling(max(data3$X)), # longitude max
-         by=gridsize)
-Y <- seq(floor(min(data3$Y)), # latitude min
-         ceiling(max(data3$Y)), # latitude max
-         by=gridsize)
-data3.grid <- as.data.table(expand.grid(X=X, Y=Y)) 
 
-#Simulation
 Cd.idw <- idw(formula = Cdbx~1, data = clean.Cd, locations = ~X+Y, newdata = data3.grid, idp = 3, nmax=20)
 setnames(Cd.idw, "var1.pred", "Cd.pred")
 
-#Display the result of the first simulation
+
 ggplot() + 
   geom_tile(data=Cd.idw, 
             aes(x = X, y = Y, fill=Cd.pred)) +
   geom_point(data=clean.Cd, 
              aes(x=X, y=Y, color="Measurement points"),
              shape=18,
-             size=3) +
+             size=1) +
   scale_color_manual("", values="white") +
   labs(fill="Cdbx predictions [mg/m³]") +
   theme(legend.key = element_rect(fill = "#34668c", 
@@ -828,7 +819,7 @@ ggplot() +
   ylab("Latitude") +
   ggtitle("Prediction of cadmium data")
 
-#Find the point of the grid avec la bonne proba et concentration
+#Point de la grille avec la bonne proba et concentration
 Cd.idw <- as.data.table(Cd.idw)
 ishigh <- Cd.idw[,-c(1,2)] > 15
 risk <- data.table(x=Cd.idw$x, y = Cd.idw$y, Cam = rowSums(ishigh)/10)
@@ -837,14 +828,12 @@ ggplot() + geom_point(data = risk, aes(x=X,y=Y)) + geom_point(data = risk[Cam>80
                                                               aes(x=X, y=Y, 
                                                               color = 'red'),
                                                               shape = 1,
-                                                              size = 3) +
+                                                              size = 1) +
   xlab("Longitude") +
   ylab("Latitude") +
   ggtitle("High risk areas")
 
 
-
-#A color plot
 ggplot() + geom_tile(data = risk, aes(x=X,y=Y, fill=Cam))+
   labs(fill="P(Cd > 20 mg/l)") +
   xlab("Longitude") +
